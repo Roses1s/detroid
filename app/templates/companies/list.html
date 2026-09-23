@@ -6,12 +6,8 @@
   <div class="o_cp_left o_cp_left--row">
     <div class="o_cp_buttons">
       <a class="btn btn--primary" href="{{ url_for('contacts.company_create') }}">Создать</a>
-      <form method="post" action="{{ url_for('contacts.companies_clear_all') }}" style="display:inline" onsubmit="return confirm('УДАЛИТЬ ВСЕ КОМПАНИИ? Безвозвратно!')">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn btn--danger">Удалить все</button>
-      </form>
     </div>
-    <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Компании — контакты убраны</span></h1>
+    <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Компании</span></h1>
   </div>
   <div class="o_cp_center">
     <form method="get" action="{{ url_for('contacts.companies_list') }}" class="o_searchview">

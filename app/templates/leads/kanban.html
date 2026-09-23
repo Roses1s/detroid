@@ -6,13 +6,8 @@
   <div class="o_cp_left o_cp_left--row">
     <div class="o_cp_buttons">
       <a class="btn btn--primary" href="{{ url_for('leads.create') }}">Создать</a>
-      <form method="post" action="{{ url_for('leads.clear_all') }}" style="display:inline" onsubmit="return confirm('УДАЛИТЬ ВСЕ ЛИДЫ (КОМПАНИИ) В CRM? Безвозвратно! Подтверди.')">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="next" value="{{ request.full_path }}">
-        <button type="submit" class="btn btn--danger" title="Удалить все карточки — доступно всем пользователям">Удалить все</button>
-      </form>
     </div>
-    <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Лиды (Компании) — контакты убраны</span></h1>
+    <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Лиды (Компании)</span></h1>
   </div>
   <div class="o_cp_center">
     {% set search_action = url_for('leads.kanban') %}

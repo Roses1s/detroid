@@ -10,11 +10,6 @@
     <div class="o_cp_buttons">
       <a class="btn btn--primary" href="{{ url_for('leads.create') }}">Создать лид (компанию)</a>
       <a class="btn btn--secondary" href="{{ url_for('leads.kanban') }}">К канбану лидов</a>
-      <form method="post" action="{{ url_for('main.clear_all_crm') }}" style="display:inline" onsubmit="return confirm('УДАЛИТЬ ВСЕ КАРТОЧКИ В CRM? Лиды, компании, заявки, логи — всё безвозвратно! Доступно всем пользователям.');">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="next" value="{{ request.full_path }}">
-        <button type="submit" class="btn btn--danger">Удалить все карточки</button>
-      </form>
     </div>
   </div>
 </div>
@@ -74,7 +69,7 @@
       </table>
     </div>
     {% else %}
-      <p class="muted">Лидов пока нет. <a href="{{ url_for('leads.create') }}">Создайте первый лид-компанию</a>. Все старые карточки можно удалить кнопкой выше — доступно всем.</p>
+      <p class="muted">Лидов пока нет. <a href="{{ url_for('leads.create') }}">Создайте первый лид-компанию</a>.</p>
     {% endif %}
   </div>
 </div>
