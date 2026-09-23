@@ -1,22 +1,24 @@
-"""Лид (потенциальная сделка) + лента общения (chatter как в Odoo)."""
+"""Лид — единственный активный модуль CRM + лента общения (chatter как в Odoo).
+
+Очищен в рамках глобального обновления: удалены связи с компаниями, контактами и заявками.
+Эти модули отключены и будут добавляться с нуля по указанию владельца.
+"""
+
 import enum
-# NB: datetime.utcnow() сознательно (весь проект на нём; в Python 3.12 он
-# deprecated, но переход на aware-даты поменяет смысл уже записанных дат —
-# делать отдельной миграцией при переходе на новые версии).
 from datetime import datetime
 
 from ..extensions import db
 
 
 class LeadStage(str, enum.Enum):
-    """Стадии воронки холодных звонков. Порядок важен — это порядок колонок канбана."""
+    """Стадии воронки. Порядок важен — это порядок колонок канбана. Все стадии равноправны."""
 
-    LEAD = "lead"                  # Лид
-    NO_ANSWER = "no_answer"        # Не дозвонились
-    GATEKEEPER = "gatekeeper"      # Не прошёл секретаря
-    LPR = "lpr"                    # Вышел на ЛПР
-    POTENTIAL = "potential"        # Потенциальный клиент
-    GONE = "gone"                  # Уехали
+    LEAD = "lead"
+    NO_ANSWER = "no_answer"
+    GATEKEEPER = "gatekeeper"
+    LPR = "lpr"
+    POTENTIAL = "potential"
+    GONE = "gone"
 
     @property
     def title(self) -> str:
@@ -41,7 +43,6 @@ class LeadStage(str, enum.Enum):
         }[self.value]
 
 
-# Порядок колонок на канбане
 STAGE_ORDER = [
     LeadStage.LEAD,
     LeadStage.NO_ANSWER,
@@ -53,8 +54,6 @@ STAGE_ORDER = [
 
 
 class MessageKind(str, enum.Enum):
-    """Тип записи в ленте: внутренняя заметка или сообщение клиенту."""
-
     NOTE = "note"
     MESSAGE = "message"
 
@@ -71,43 +70,35 @@ class Lead(db.Model):
     __tablename__ = "leads"
 
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)          # название сделки
-    contact_name = db.Column(db.String(120), default="")       # имя контакта (текст)
+    title = db.Column(db.String(200), nullable=False)
+    contact_name = db.Column(db.String(120), default="")
     phone = db.Column(db.String(40), default="")
     email = db.Column(db.String(120), default="")
-    source = db.Column(db.String(60), default="")              # сайт, звонок, рекомендация...
-    expected_revenue = db.Column(db.Numeric(14, 2), default=0)  # ожидаемая сумма
+    source = db.Column(db.String(60), default="")
+    expected_revenue = db.Column(db.Numeric(14, 2), default=0)
     stage = db.Column(db.Enum(LeadStage), nullable=False, default=LeadStage.LEAD)
-    priority = db.Column(db.Integer, nullable=False, default=0)  # 0..3 — звёзды
-    tags = db.Column(db.String(255), default="")               # теги через запятую
+    priority = db.Column(db.Integer, nullable=False, default=0)  # 0..3
+    tags = db.Column(db.String(255), default="")
     notes = db.Column(db.Text, default="")
 
     manager_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     manager = db.relationship("User", back_populates="leads")
 
-    company_id = db.Column(db.Integer, db.ForeignKey("companies.id"), nullable=True)
-    company = db.relationship("Company", back_populates="leads")
-
-    contact_id = db.Column(db.Integer, db.ForeignKey("contacts.id"), nullable=True)
-    contact = db.relationship("Contact", back_populates="leads")
-
-    # Лента общения (новые сверху при выборке с сортировкой)
+    # Лента общения
     messages = db.relationship(
         "LeadMessage", back_populates="lead", lazy="dynamic",
         cascade="all, delete-orphan",
     )
 
-    # Заявки, созданные из лида
-    requests = db.relationship(
-        "Request", back_populates="lead", lazy="dynamic",
-    )
-
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow,
-                           onupdate=datetime.utcnow)
-    closed_at = db.Column(db.DateTime, nullable=True)  # резерв: финальных стадий нет, не заполняется
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # ── Хелперы ─────────────────────────────────────────
+    # Legacy поля оставлены в БД для совместимости миграций, но не используются в коде.
+    # Если в старых данных есть company_id/contact_id — они игнорируются.
+    # Чтобы SQLAlchemy не падал, колонки могут оставаться в таблице, но relationship удалён.
+    # Мы явно НЕ объявляем company_id/contact_id здесь, чтобы не тянуть мертвый код.
+    # Миграции знают о старых колонках, но ORM их не трогает.
+
     @property
     def tag_list(self) -> list[str]:
         return [t.strip() for t in (self.tags or "").split(",") if t.strip()]
@@ -117,10 +108,6 @@ class Lead(db.Model):
         self.tags = ", ".join(v.strip() for v in values if v.strip())
 
     def log_stage_change(self, old_stage) -> None:
-        """Системная запись в ленту о смене стадии.
-
-        Вызывать после смены self.stage, commit — снаружи.
-        """
         if old_stage == self.stage:
             return
         old_title = old_stage.title if old_stage else "—"
@@ -128,7 +115,7 @@ class Lead(db.Model):
         db.session.add(
             LeadMessage(
                 lead=self,
-                author=None,  # системная запись
+                author=None,
                 kind=MessageKind.NOTE,
                 body=f"🔀 Стадия изменена: {old_title} → {new_title}",
             )
@@ -150,10 +137,6 @@ class Lead(db.Model):
             "notes": self.notes,
             "manager_id": self.manager_id,
             "manager_name": self.manager.display_name if self.manager else None,
-            "company_id": self.company_id,
-            "company_name": self.company.name if self.company else None,
-            "contact_id": self.contact_id,
-            "contact_name_full": self.contact.full_name if self.contact else None,
             "messages_count": self.messages.count(),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -164,8 +147,6 @@ class Lead(db.Model):
 
 
 class LeadMessage(db.Model):
-    """Одна запись в ленте лида (chatter): заметка или сообщение."""
-
     __tablename__ = "lead_messages"
 
     id = db.Column(db.Integer, primary_key=True)

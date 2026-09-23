@@ -1,6 +1,7 @@
-"""Фабрика Flask-приложения — глобальное обновление: только канбан лидов и пользователи."""
+"""Фабрика Flask-приложения — чистый CRM: только лиды + пользователи."""
 
 import hashlib
+import logging
 import os
 from datetime import datetime
 
@@ -15,12 +16,15 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    import logging
+    # Логи
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    if app.config["SECRET_KEY"] == "dev-secret-key-change-me":
+        app.logger.warning("SECRET_KEY is default! Set SECRET_KEY in .env for production.")
 
+    # За прокси (nginx)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     db.init_app(app)
@@ -28,7 +32,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     login_manager.init_app(app)
     csrf.init_app(app)
 
-    from .models import User  # noqa: F401
+    from .models import User  # noqa: F401 — нужен для миграций
 
     @login_manager.user_loader
     def load_user(user_id: str):
@@ -40,8 +44,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
             return jsonify({"error": "auth required"}), 401
         return redirect(url_for("auth.login", next=request.path))
 
-    # Маршруты — оставляем только канбан лидов и пользователи для админа
-    # Все остальные модули (компании, заявки, контакты, отчеты) удалены — будем добавлять с нуля как скажешь
+    # Blueprints — только активные модули
     from .routes.api import api_bp
     from .routes.auth import auth_bp
     from .routes.leads import leads_bp
@@ -53,13 +56,6 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     app.register_blueprint(leads_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(users_bp)
-
-    # Старые модули отключены — возвращают 410 если кто-то зайдет по старой ссылке
-    # from .routes.contacts import contacts_bp
-    # from .routes.requests import legacy_bp, requests_bp
-    # app.register_blueprint(contacts_bp)
-    # app.register_blueprint(requests_bp)
-    # app.register_blueprint(legacy_bp)
 
     @app.errorhandler(404)
     def not_found(e):

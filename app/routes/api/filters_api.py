@@ -1,4 +1,5 @@
-"""JSON API избранных фильтров поиска (Odoo: Favorites)."""
+"""JSON API избранных фильтров — только для лидов."""
+
 from flask import jsonify, request
 from flask_login import current_user, login_required
 
@@ -6,7 +7,7 @@ from ...extensions import db
 from ...models.saved_filter import SavedFilter
 from . import api_bp
 
-TARGETS = ("leads", "requests")
+TARGETS = ("leads",)
 
 
 @api_bp.route("/favorites", methods=["GET"])

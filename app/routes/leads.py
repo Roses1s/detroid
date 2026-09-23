@@ -1,4 +1,4 @@
-"""Страницы лидов: канбан, список, карточка, форма, лента общения — единственный модуль CRM."""
+"""Лиды — единственный модуль CRM: канбан, список, карточка, форма, лента."""
 
 from itertools import groupby
 from urllib.parse import urlencode
@@ -31,6 +31,8 @@ def _filtered_query():
 
     query = Lead.query
     if q:
+        # Ограничиваем длину поиска чтобы не грузить БД
+        q = q[:100]
         like = f"%{q}%"
         query = query.filter(
             or_(
@@ -120,6 +122,9 @@ def _parse_custom_filters():
         spec = CUSTOM_FILTER_FIELDS.get(field)
         if not spec or op_ not in spec["ops"] or value == "":
             continue
+        # Ограничиваем длину значения
+        if len(value) > 100:
+            value = value[:100]
         label = _custom_filter_label(field, op_, value)
         if label is None:
             continue
@@ -147,8 +152,7 @@ def _apply_custom_filter(query, f):
         if resolved == "bad":
             return query
         if op_ == "=":
-            return query.filter(Lead.manager_id.is_(None) if resolved is None
-                                else Lead.manager_id == resolved)
+            return query.filter(Lead.manager_id.is_(None) if resolved is None else Lead.manager_id == resolved)
         if resolved is None:
             return query.filter(Lead.manager_id.is_not(None))
         return query.filter(or_(Lead.manager_id != resolved, Lead.manager_id.is_(None)))
@@ -189,41 +193,26 @@ def _group_columns(base, group: str):
         columns = []
         for m in managers + [None]:
             if m is not None:
-                leads = (
-                    base.filter(Lead.manager_id == m.id)
-                    .order_by(Lead.priority.desc(), Lead.updated_at.desc())
-                    .all()
-                )
+                leads = base.filter(Lead.manager_id == m.id).order_by(Lead.priority.desc(), Lead.updated_at.desc()).all()
                 title, drop = m.display_name, str(m.id)
             else:
-                leads = (
-                    base.filter(Lead.manager_id.is_(None))
-                    .order_by(Lead.priority.desc(), Lead.updated_at.desc())
-                    .all()
-                )
+                leads = base.filter(Lead.manager_id.is_(None)).order_by(Lead.priority.desc(), Lead.updated_at.desc()).all()
                 title, drop = "Без менеджера", "none"
             total = sum(float(r.expected_revenue or 0) for r in leads)
-            columns.append({"key": f"manager:{drop}", "title": title, "drop": drop,
-                            "leads": leads, "total": total})
+            columns.append({"key": f"manager:{drop}", "title": title, "drop": drop, "leads": leads, "total": total})
         return columns, "manager", "manager"
     if group == "priority":
         columns = []
         for num, title in [(3, "★★★"), (2, "★★"), (1, "★"), (0, "—")]:
             leads = base.filter(Lead.priority == num).order_by(Lead.updated_at.desc()).all()
             total = sum(float(r.expected_revenue or 0) for r in leads)
-            columns.append({"key": f"priority:{num}", "title": title, "drop": str(num),
-                            "leads": leads, "total": total})
+            columns.append({"key": f"priority:{num}", "title": title, "drop": str(num), "leads": leads, "total": total})
         return columns, "priority", "priority"
     columns = []
     for stage in STAGE_ORDER:
-        leads = (
-            base.filter(Lead.stage == stage)
-            .order_by(Lead.priority.desc(), Lead.updated_at.desc())
-            .all()
-        )
+        leads = base.filter(Lead.stage == stage).order_by(Lead.priority.desc(), Lead.updated_at.desc()).all()
         total = sum(float(r.expected_revenue or 0) for r in leads)
-        columns.append({"key": f"stage:{stage.value}", "title": stage.title, "drop": stage.value,
-                        "leads": leads, "total": total})
+        columns.append({"key": f"stage:{stage.value}", "title": stage.title, "drop": stage.value, "leads": leads, "total": total})
     return columns, "stage", "stage"
 
 
@@ -251,11 +240,7 @@ def _qs_wo_flt(idx: int) -> str:
 
 def _search_context():
     managers = User.query.filter_by(is_active=True).order_by(User.full_name).all()
-    rows = (
-        db.session.query(Lead.stage, func.count(Lead.id))
-        .group_by(Lead.stage)
-        .all()
-    )
+    rows = db.session.query(Lead.stage, func.count(Lead.id)).group_by(Lead.stage).all()
     stage_counts = {stage.value: count for stage, count in rows if stage}
     active_manager = request.args.get("manager_id", "")
     active_manager_name = ""
@@ -279,9 +264,7 @@ def _search_context():
         "group_modes": GROUP_BY_MODES,
         "custom_filters": _parse_custom_filters(),
         "active_flts": request.args.getlist("flt"),
-        "favorites": SavedFilter.query.filter_by(
-            user_id=current_user.id, target="leads"
-        ).order_by(SavedFilter.name).all(),
+        "favorites": SavedFilter.query.filter_by(user_id=current_user.id, target="leads").order_by(SavedFilter.name).all(),
         "qs": _qs,
         "qs_wo_flt": _qs_wo_flt,
         "searchview_data": {
@@ -320,15 +303,10 @@ def list_view():
         leads = query.offset((page - 1) * per_page).limit(per_page).all()
         page_sum = sum(float(l.expected_revenue or 0) for l in leads)
         groups = [{"title": None, "leads": leads, "total": page_sum}]
-        total = float(
-            base.with_entities(func.coalesce(func.sum(Lead.expected_revenue), 0)).scalar()
-        )
+        total = float(base.with_entities(func.coalesce(func.sum(Lead.expected_revenue), 0)).scalar() or 0)
     else:
         columns, _, _ = _group_columns(base, group)
-        groups = [
-            {"title": c["title"], "leads": c["leads"], "total": c["total"]}
-            for c in columns
-        ]
+        groups = [{"title": c["title"], "leads": c["leads"], "total": c["total"]} for c in columns]
         total = sum(c["total"] for c in columns)
         total_count = sum(len(c["leads"]) for c in columns)
         page, pages = 1, 1
@@ -341,15 +319,13 @@ def list_view():
 @leads_bp.route("/<int:lead_id>")
 @login_required
 def detail(lead_id: int):
-    lead = Lead.query.get_or_404(lead_id)
+    lead = Lead.query.options(*_EAGER).get_or_404(lead_id)
     messages = lead.messages.order_by(LeadMessage.created_at.desc()).all()
     days = [
         (day, list(group))
         for day, group in groupby(messages, key=lambda m: m.created_at.date() if m.created_at else None)
     ]
-    return render_template(
-        "leads/detail.html", lead=lead, days=days, stages=STAGE_ORDER
-    )
+    return render_template("leads/detail.html", lead=lead, days=days, stages=STAGE_ORDER)
 
 
 @leads_bp.route("/<int:lead_id>/stage", methods=["POST"])
@@ -374,6 +350,8 @@ def move_stage(lead_id: int):
 def add_note(lead_id: int):
     lead = Lead.query.get_or_404(lead_id)
     body = (request.form.get("body") or "").strip()
+    if len(body) > 5000:
+        body = body[:5000]
     kind_value = (request.form.get("kind") or MessageKind.NOTE.value).strip()
     if not body:
         flash("Напишите текст записи — пустую добавлять нечего.", "warning")
@@ -404,21 +382,26 @@ def delete_note(message_id: int):
 
 def _fill_from_form(lead: Lead, form) -> list[str]:
     warnings = []
-    lead.title = (form.get("title") or "").strip()
-    lead.contact_name = (form.get("contact_name") or "").strip()
-    lead.phone = (form.get("phone") or "").strip()
-    lead.email = (form.get("email") or "").strip()
-    lead.source = (form.get("source") or "").strip()
-    lead.notes = (form.get("notes") or "").strip()
+    title = (form.get("title") or "").strip()
+    if len(title) > 200:
+        title = title[:200]
+    lead.title = title
+    lead.contact_name = (form.get("contact_name") or "").strip()[:120]
+    lead.phone = (form.get("phone") or "").strip()[:40]
+    lead.email = (form.get("email") or "").strip()[:120]
+    lead.source = (form.get("source") or "").strip()[:60]
+    lead.notes = (form.get("notes") or "").strip()[:5000]
     try:
-        lead.expected_revenue = float(form.get("expected_revenue") or 0)
+        val = float(form.get("expected_revenue") or 0)
+        lead.expected_revenue = max(0, val)
     except ValueError:
         lead.expected_revenue = 0
     try:
         lead.priority = max(0, min(3, int(form.get("priority") or 0)))
     except ValueError:
         lead.priority = 0
-    lead.tag_list = (form.get("tags") or "").split(",")
+    tags_raw = (form.get("tags") or "")[:500]
+    lead.tag_list = tags_raw.split(",")
     stage_value = (form.get("stage") or "").strip()
     if stage_value:
         try:
@@ -432,11 +415,6 @@ def _fill_from_form(lead: Lead, form) -> list[str]:
         if manager_value:
             warnings.append("указанный менеджер не найден — поле очищено")
         lead.manager_id = None
-    # company_id и contact_id игнорируем — модули удалены, но чтобы не падало если придет старый POST
-    if hasattr(lead, 'company_id'):
-        lead.company_id = None
-    if hasattr(lead, 'contact_id'):
-        lead.contact_id = None
     return warnings
 
 
@@ -464,7 +442,8 @@ def create():
         flash(f"Лид «{lead.title}» создан.", "success")
         return redirect(url_for("leads.detail", lead_id=lead.id))
     preset_stage = request.args.get("stage", LeadStage.LEAD.value)
-    lead = Lead(title="", stage=LeadStage(preset_stage) if preset_stage in [s.value for s in STAGE_ORDER] else LeadStage.LEAD)
+    stage = LeadStage(preset_stage) if preset_stage in [s.value for s in STAGE_ORDER] else LeadStage.LEAD
+    lead = Lead(title="", stage=stage)
     return render_template("leads/form.html", lead=lead, is_new=True, **ctx)
 
 
@@ -501,7 +480,6 @@ def delete(lead_id: int):
 @leads_bp.route("/clear-all", methods=["POST"])
 @login_required
 def clear_all():
-    from ..models.lead import LeadMessage
     leads_count = Lead.query.count()
     db.session.query(LeadMessage).delete()
     db.session.query(Lead).delete()

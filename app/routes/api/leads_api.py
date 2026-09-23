@@ -1,7 +1,8 @@
-"""JSON API лидов: список, создание, смена стадии, удаление, лента общения."""
+"""JSON API лидов — единственный активный модуль."""
 
 from flask import jsonify, request
 from flask_login import current_user, login_required
+from sqlalchemy.orm import selectinload
 
 from ...extensions import db
 from ...models.lead import Lead, LeadMessage, LeadStage, MessageKind
@@ -9,17 +10,11 @@ from ...models.user import User
 from . import api_bp
 
 
-def _require_login_json():
-    if not current_user.is_authenticated:
-        return jsonify({"error": "auth required"}), 401
-    return None
-
-
 @api_bp.route("/leads", methods=["GET"])
 @login_required
 def api_leads_list():
     stage = (request.args.get("stage") or "").strip()
-    query = Lead.query
+    query = Lead.query.options(selectinload(Lead.manager))
     if stage:
         try:
             query = query.filter(Lead.stage == LeadStage(stage))
@@ -36,13 +31,16 @@ def api_lead_create():
     title = (data.get("title") or "").strip()
     if not title:
         return jsonify({"error": "title is required"}), 400
+    if len(title) > 200:
+        return jsonify({"error": "title too long (max 200)"}), 400
+
     lead = Lead(title=title, manager_id=current_user.id)
     stage_value = (data.get("stage") or LeadStage.LEAD.value).strip()
     try:
         lead.stage = LeadStage(stage_value)
     except ValueError:
         lead.stage = LeadStage.LEAD
-    # Быстрое создание из колонки в режиме группировки (Odoo: Group By)
+
     if "manager" in data:
         mgr = (str(data.get("manager")) or "").strip()
         if mgr == "none":
@@ -51,17 +49,22 @@ def api_lead_create():
             lead.manager_id = current_user.id
         elif mgr.isdigit() and db.session.get(User, int(mgr)):
             lead.manager_id = int(mgr)
+
     if "priority" in data:
         try:
             lead.priority = max(0, min(3, int(data["priority"])))
         except (TypeError, ValueError):
             pass
-    lead.contact_name = (data.get("contact_name") or "").strip()
-    lead.phone = (data.get("phone") or "").strip()
+
+    lead.contact_name = (data.get("contact_name") or "").strip()[:120]
+    lead.phone = (data.get("phone") or "").strip()[:40]
     try:
         lead.expected_revenue = float(data.get("expected_revenue") or 0)
+        if lead.expected_revenue < 0:
+            lead.expected_revenue = 0
     except (TypeError, ValueError):
         lead.expected_revenue = 0
+
     db.session.add(lead)
     db.session.commit()
     return jsonify(lead.to_dict()), 201
@@ -70,7 +73,6 @@ def api_lead_create():
 @api_bp.route("/leads/<int:lead_id>/stage", methods=["PATCH"])
 @login_required
 def api_lead_move(lead_id: int):
-    """Смена стадии — вызывается при drag&drop карточки."""
     lead = Lead.query.get_or_404(lead_id)
     data = request.get_json(force=True, silent=True) or {}
     stage_value = (data.get("stage") or "").strip()
@@ -88,8 +90,7 @@ def api_lead_move(lead_id: int):
 @api_bp.route("/leads/<int:lead_id>/manager", methods=["PATCH"])
 @login_required
 def api_lead_assign(lead_id: int):
-    """Смена менеджера — drag&drop в режиме «Группировать по менеджеру»."""
-    lead = Lead.query.get_or_404(lead_id)
+    lead = Lead.query.options(selectinload(Lead.manager)).get_or_404(lead_id)
     data = request.get_json(force=True, silent=True) or {}
     mgr = (str(data.get("manager")) or "").strip()
     if mgr == "none":
@@ -115,7 +116,6 @@ def api_lead_assign(lead_id: int):
 @api_bp.route("/leads/<int:lead_id>/priority", methods=["PATCH"])
 @login_required
 def api_lead_priority(lead_id: int):
-    """Смена приоритета — drag&drop в режиме «Группировать по приоритету»."""
     lead = Lead.query.get_or_404(lead_id)
     data = request.get_json(force=True, silent=True) or {}
     try:
@@ -139,7 +139,8 @@ def api_lead_update(lead_id: int):
             setattr(lead, field, data[field].strip())
     if "expected_revenue" in data:
         try:
-            lead.expected_revenue = float(data["expected_revenue"] or 0)
+            val = float(data["expected_revenue"] or 0)
+            lead.expected_revenue = max(0, val)
         except (TypeError, ValueError):
             pass
     if "priority" in data:
@@ -162,7 +163,6 @@ def api_lead_delete(lead_id: int):
     return jsonify({"ok": True})
 
 
-# ── Лента общения (chatter) ───────────────────────────────
 @api_bp.route("/leads/<int:lead_id>/messages", methods=["GET"])
 @login_required
 def api_messages_list(lead_id: int):
@@ -179,6 +179,8 @@ def api_message_create(lead_id: int):
     body = (data.get("body") or "").strip()
     if not body:
         return jsonify({"error": "body is required"}), 400
+    if len(body) > 5000:
+        return jsonify({"error": "body too long (max 5000)"}), 400
     try:
         kind = MessageKind((data.get("kind") or MessageKind.NOTE.value).strip())
     except ValueError:

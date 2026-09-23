@@ -1,13 +1,8 @@
-"""Вход / смена пароля / выход.
+"""Вход / смена пароля / выход — безопасность."""
 
-Безопасность (этап «ревью»):
-- регистрация закрыта — аккаунты создаёт только администратор (/users/);
-- брутфорс входа ограничен: после нескольких неудач — пауза по IP;
-- параметр next после входа разрешён только внутри сайта;
-- выход — через POST (вместе с CSRF-защитой).
-"""
 import time
 from collections import defaultdict, deque
+from urllib.parse import urlparse
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
@@ -17,12 +12,10 @@ from ..models import User
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
-# Журнал неудачных попыток входа: IP -> времена попыток (в памяти, до перезапуска)
 _failed_attempts: dict[str, deque] = defaultdict(deque)
 
 
 def _login_locked(ip: str, max_failures: int, lock_seconds: int) -> bool:
-    """Идёт ли сейчас блокировка входа для этого IP."""
     times = _failed_attempts[ip]
     if not times:
         return False
@@ -41,8 +34,21 @@ def _login_succeeded(ip: str) -> None:
 
 
 def _safe_next(value: str | None) -> str | None:
-    """Разрешаем редирект после входа только внутри сайта (относительный путь)."""
-    if not value or not value.startswith("/") or value.startswith("//"):
+    """Только относительный путь внутри сайта, без //, \\ и схем."""
+    if not value:
+        return None
+    # Блокируем абсолютные URL и протоколы
+    if value.startswith("//") or value.startswith("\\\\"):
+        return None
+    if "\\" in value:
+        return None
+    parsed = urlparse(value)
+    if parsed.scheme or parsed.netloc:
+        return None
+    if not value.startswith("/"):
+        return None
+    # Блокируем попытки выйти за пределы через // в середине после декодирования
+    if "//" in value:
         return None
     return value
 
@@ -53,12 +59,14 @@ def login():
         return redirect(url_for("main.dashboard"))
     if request.method == "POST":
         ip = request.remote_addr or "?"
-        if _login_locked(ip, current_app.config["LOGIN_MAX_FAILURES"],
-                         current_app.config["LOGIN_LOCK_SECONDS"]):
+        if _login_locked(ip, current_app.config["LOGIN_MAX_FAILURES"], current_app.config["LOGIN_LOCK_SECONDS"]):
             flash("Слишком много неудачных попыток. Попробуйте через несколько минут.", "warning")
             return render_template("auth/login.html"), 429
         email = (request.form.get("email") or "").strip().lower()
         password = request.form.get("password") or ""
+        if len(email) > 120 or len(password) > 200:
+            flash("Неверный email или пароль.", "danger")
+            return render_template("auth/login.html")
         user = User.query.filter_by(email=email).first()
         if user and user.is_active and user.check_password(password):
             _login_succeeded(ip)
@@ -73,7 +81,6 @@ def login():
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
-    """Регистрация закрыта: аккаунты создаёт администратор в разделе «Пользователи»."""
     flash("Регистрация закрыта. Попросите администратора создать вам аккаунт.", "warning")
     return redirect(url_for("auth.login"))
 
@@ -81,18 +88,21 @@ def register():
 @auth_bp.route("/password", methods=["GET", "POST"])
 @login_required
 def change_password():
-    """Смена собственного пароля."""
     if request.method == "POST":
-        current = request.form.get("password") or ""
+        current_pwd = request.form.get("password") or ""
         new = request.form.get("new_password") or ""
         new2 = request.form.get("new_password2") or ""
         error = None
-        if not current_user.check_password(current):
+        if not current_user.check_password(current_pwd):
             error = "Текущий пароль указан неверно."
         elif len(new) < 6:
             error = "Новый пароль должен быть не короче 6 символов."
+        elif len(new) > 128:
+            error = "Новый пароль слишком длинный (макс 128)."
         elif new != new2:
             error = "Новые пароли не совпадают."
+        elif new == current_pwd:
+            error = "Новый пароль должен отличаться от старого."
         if error:
             flash(error, "danger")
         else:
@@ -106,7 +116,6 @@ def change_password():
 @auth_bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
-    """Только POST: GET-выход можно было бы вызвать чужой страницей/картинкой."""
     logout_user()
     flash("Вы вышли из системы.", "info")
     return redirect(url_for("auth.login"))

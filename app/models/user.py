@@ -1,4 +1,5 @@
-"""Пользователь системы (менеджер / администратор)."""
+"""Пользователь системы (менеджер / администратор) — единственный вспомогательный модуль."""
+
 from datetime import datetime
 
 from flask_login import UserMixin
@@ -19,14 +20,12 @@ class User(db.Model, UserMixin):
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    # Лиды, за которые отвечает менеджер
     leads = db.relationship("Lead", back_populates="manager", lazy="dynamic")
-    requests = db.relationship("Request", back_populates="manager", lazy="dynamic")
-    # Избранные фильтры поиска (Odoo: Favorites)
-    saved_filters = db.relationship("SavedFilter", back_populates="user", lazy="dynamic",
-                                    cascade="all, delete-orphan")
+    saved_filters = db.relationship(
+        "SavedFilter", back_populates="user", lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
 
-    # ── Пароль ──────────────────────────────────────────
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
 
@@ -37,7 +36,7 @@ class User(db.Model, UserMixin):
     def display_name(self) -> str:
         return self.full_name or self.username
 
-    def get_id(self):  # Flask-Login требует строку
+    def get_id(self) -> str:  # Flask-Login требует строку
         return str(self.id)
 
     def __repr__(self) -> str:  # pragma: no cover

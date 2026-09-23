@@ -1,19 +1,15 @@
-"""Пользователи (только администратор): список, создание, редактирование, блокировка.
+"""Пользователи — только для админа. Регистрация закрыта."""
 
-Регистрация на сайте закрыта — это единственный способ завести или изменить аккаунт.
-"""
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from ..extensions import db
-from ..models import Lead, LeadMessage, RequestMessage, User
-from ..models.request import Request as RequestModel
+from ..models import Lead, LeadMessage, User
 
 users_bp = Blueprint("users", __name__, url_prefix="/users")
 
 
 def _require_admin():
-    """Не админ — 404 (не светим сам факт существования раздела)."""
     if current_user.role != "admin":
         abort(404)
 
@@ -62,7 +58,6 @@ def create():
 @users_bp.route("/<int:user_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit(user_id: int):
-    """Админ меняет логин, почту, имя, роль и (по желанию) пароль пользователя."""
     _require_admin()
     user = User.query.get_or_404(user_id)
     if request.method == "POST":
@@ -70,7 +65,7 @@ def edit(user_id: int):
         email = (request.form.get("email") or "").strip().lower()
         full_name = (request.form.get("full_name") or "").strip()
         role = request.form.get("role") or "manager"
-        password = request.form.get("password") or ""  # пусто = пароль не менять
+        password = request.form.get("password") or ""
 
         error = None
         if not username or not email:
@@ -78,7 +73,6 @@ def edit(user_id: int):
         elif role not in ("admin", "manager"):
             error = "Неизвестная роль."
         elif user.id == current_user.id and role != "admin":
-            # Иначе админ разжалует сам себя и потеряет доступ к управлению
             error = "Нельзя лишить администраторских прав самого себя."
         elif password and len(password) < 6:
             error = "Пароль должен быть не короче 6 символов."
@@ -105,18 +99,22 @@ def edit(user_id: int):
 @users_bp.route("/<int:user_id>/delete", methods=["POST"])
 @login_required
 def delete(user_id: int):
-    """Удаление пользователя. Лиды и заявки НЕ удаляются — остаются без ответственного."""
     _require_admin()
     user = User.query.get_or_404(user_id)
     if user.id == current_user.id:
         flash("Нельзя удалить самого себя.", "warning")
     else:
         label = user.display_name
-        # Отвязываем всё, что ссылается на пользователя (иначе FK в PostgreSQL не даст удалить):
+        # Отвязываем лиды и сообщения, чтобы FK не блокировал удаление
         Lead.query.filter_by(manager_id=user.id).update({"manager_id": None})
-        RequestModel.query.filter_by(manager_id=user.id).update({"manager_id": None})
         LeadMessage.query.filter_by(author_id=user.id).update({"author_id": None})
-        RequestMessage.query.filter_by(author_id=user.id).update({"author_id": None})
+        # Legacy таблицы — пробуем отвязать, если есть
+        try:
+            from ..models.request import Request as Req, RequestMessage as ReqMsg
+            Req.query.filter_by(manager_id=user.id).update({"manager_id": None})
+            ReqMsg.query.filter_by(author_id=user.id).update({"author_id": None})
+        except Exception:
+            pass
         db.session.delete(user)
         db.session.commit()
         flash(f"Пользователь «{label}» удалён.", "info")
@@ -126,7 +124,6 @@ def delete(user_id: int):
 @users_bp.route("/<int:user_id>/toggle", methods=["POST"])
 @login_required
 def toggle(user_id: int):
-    """Блокировка / разблокировка (вход и работа блокируются)."""
     _require_admin()
     user = User.query.get_or_404(user_id)
     if user.id == current_user.id:
