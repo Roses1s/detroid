@@ -24,7 +24,6 @@
       </button>
       <div class="o_navbar__user-menu">
         <div class="o_navbar__user-mail">{{ current_user.email }}{% if current_user.role == 'admin' %} · admin{% endif %}</div>
-        <a class="o_navbar__user-item" href="{{ url_for('leads.kanban') }}">Доска канбан</a>
         <a class="o_navbar__user-item" href="{{ url_for('auth.change_password') }}">Сменить пароль</a>
         <button type="button" class="o_navbar__user-item o_theme_row" id="theme-toggle" role="switch" aria-checked="false">
           <span>Тёмный режим</span>
