@@ -5,11 +5,10 @@
 <div class="o_control_panel">
   <div class="o_cp_left">
     <div class="o_cp_left_top">
-      <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Главная</span></h1>
+      <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">CRM с нуля</span></h1>
     </div>
     <div class="o_cp_buttons">
-      <a class="btn btn--primary" href="{{ url_for('leads.create') }}">Создать лид</a>
-      <a class="btn btn--secondary" href="{{ url_for('leads.kanban') }}">К канбану лидов</a>
+      <span class="muted">Все модули удалены. Готова к новой логике.</span>
     </div>
   </div>
 </div>
@@ -18,12 +17,30 @@
 {% block content %}
 <div class="o_dashboard">
   <div class="o_panel">
-    <div class="o_panel__head">
-      <h2>Лиды</h2>
-      <a class="link" href="{{ url_for('leads.kanban') }}">Открыть канбан →</a>
-    </div>
-    <p class="muted">CRM сейчас содержит только модуль «Лиды». Остальные модули удалены — будем добавлять с нуля.</p>
-    <p><a class="btn btn--primary" href="{{ url_for('leads.kanban') }}">Перейти к лидам</a></p>
+    <div class="o_panel__head"><h2>Чистая CRM</h2></div>
+    <p class="muted">Вы выбрали мягкий сброс. Остались:</p>
+    <ul class="muted" style="margin:12px 0 12px 20px">
+      <li>Дизайн Odoo — #714B67 акцент, белый navbar в светлой теме, тёмная #262A36 в тёмной</li>
+      <li>Авторизация — вход, смена пароля, защита от брутфорса, CSRF</li>
+      <li>Пользователи — только для admin</li>
+    </ul>
+    <p class="muted">Удалены: Лиды, Компании, Заявки, Контакты, канбан, лента, фильтры, API.</p>
+    <p class="muted">Скажите какой первый модуль делать — создам модель, миграцию, маршруты и канбан с нуля.</p>
+    {% if current_user.role == 'admin' %}
+    <p><a class="btn btn--primary" href="{{ url_for('users.index') }}">К пользователям →</a></p>
+    {% endif %}
+  </div>
+
+  <div class="o_panel">
+    <div class="o_panel__head"><h2>Что дальше?</h2></div>
+    <p class="muted">Примеры модулей которые можно добавить:</p>
+    <ul class="muted" style="margin:12px 0 12px 20px">
+      <li>Лиды v2 — новая воронка с вашими стадиями</li>
+      <li>Сделки — суммы, менеджеры, канбан</li>
+      <li>Контрагенты — компании и контакты</li>
+      <li>Задачи — канбан задач</li>
+      <li>Любой свой — скажете поля и логику</li>
+    </ul>
   </div>
 </div>
 {% endblock %}

@@ -1,4 +1,4 @@
-"""Пользователь системы (менеджер / администратор) — единственный вспомогательный модуль."""
+"""Пользователь — единственный активный модуль после мягкого сброса."""
 
 from datetime import datetime
 
@@ -16,15 +16,9 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     full_name = db.Column(db.String(120), nullable=False, default="")
-    role = db.Column(db.String(20), nullable=False, default="manager")  # admin | manager
+    role = db.Column(db.String(20), nullable=False, default="manager")
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-
-    leads = db.relationship("Lead", back_populates="manager", lazy="dynamic")
-    saved_filters = db.relationship(
-        "SavedFilter", back_populates="user", lazy="dynamic",
-        cascade="all, delete-orphan",
-    )
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
@@ -36,7 +30,7 @@ class User(db.Model, UserMixin):
     def display_name(self) -> str:
         return self.full_name or self.username
 
-    def get_id(self) -> str:  # Flask-Login требует строку
+    def get_id(self) -> str:
         return str(self.id)
 
     def __repr__(self) -> str:  # pragma: no cover

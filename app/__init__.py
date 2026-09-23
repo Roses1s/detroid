@@ -1,4 +1,4 @@
-"""Фабрика Flask-приложения — чистый CRM: только лиды + пользователи."""
+"""Фабрика — мягкий сброс: только дизайн Odoo + auth + users."""
 
 import hashlib
 import logging
@@ -17,7 +17,6 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # Убираем лишние пробелы в Jinja — сразу меньше строк в view-source
     app.jinja_env.trim_blocks = True
     app.jinja_env.lstrip_blocks = True
 
@@ -26,7 +25,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     if app.config["SECRET_KEY"] == "dev-secret-key-change-me":
-        app.logger.warning("SECRET_KEY is default! Set SECRET_KEY in .env for production.")
+        app.logger.warning("SECRET_KEY default! Set in .env")
 
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
@@ -47,16 +46,12 @@ def create_app(config_class: type[Config] = Config) -> Flask:
             return jsonify({"error": "auth required"}), 401
         return redirect(url_for("auth.login", next=request.path))
 
-    from .routes.api import api_bp
     from .routes.auth import auth_bp
-    from .routes.leads import leads_bp
     from .routes.main import main_bp
     from .routes.users import users_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
-    app.register_blueprint(leads_bp)
-    app.register_blueprint(api_bp)
     app.register_blueprint(users_bp)
 
     @app.errorhandler(404)
@@ -67,48 +62,30 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     def server_error(e):
         return render_template("errors/500.html"), 500
 
-    # ── Минификация HTML для view-source: меньше строк, скрыть структуру ──
     @app.after_request
     def minify_html(response):
-        # Только HTML и только если не файл, не API
         ctype = response.content_type or ""
         if "text/html" not in ctype:
             return response
-        # Не минифицируем страницы с textarea/pre — чтобы не сломать переносы внутри полей
         try:
             html = response.get_data(as_text=True)
         except Exception:
             return response
-
-        # Пропускаем если есть textarea/pre — там важны пробелы/переносы
         if "<textarea" in html or "<pre" in html:
-            # Только убираем пустые строки и комментарии, но оставляем переносы
             html = re.sub(r'<!--(?!\[if).*?-->', '', html, flags=re.DOTALL)
-            # Убираем пустые строки
             html = "\n".join(line.rstrip() for line in html.splitlines() if line.strip() != "")
             response.set_data(html)
             return response
-
-        # Для kanban/list — делаем 1 строку (как просил: меньше строк в view-source)
-        # 714 строк → 1 строка, 28307 → ~24000 chars
         html = re.sub(r'<!--(?!\[if).*?-->', '', html, flags=re.DOTALL)
         html = re.sub(r'>\s+<', '><', html)
-        # Склеиваем всё в одну строку, убирая лишние пробелы
         html = "".join(line.strip() for line in html.splitlines() if line.strip())
-        # Убираем множественные пробелы между словами (но не внутри тегов)
-        # Оставляем один пробел
         html = re.sub(r'\s{2,}', ' ', html)
         response.set_data(html)
         return response
 
     @app.context_processor
     def inject_globals():
-        from .models.lead import LeadStage
-
-        return {
-            "app_name": app.config.get("APP_NAME", "Detroid CRM"),
-            "LeadStage": LeadStage,
-        }
+        return {"app_name": app.config.get("APP_NAME", "Detroid CRM")}
 
     @app.template_filter("money")
     def money_filter(value):
@@ -135,8 +112,6 @@ def create_app(config_class: type[Config] = Config) -> Flask:
                 return value
         now = datetime.utcnow()
         delta = (now - value).total_seconds()
-        if delta < 0:
-            delta = 0
         if delta < 60:
             return "только что"
         if delta < 3600:
@@ -150,12 +125,6 @@ def create_app(config_class: type[Config] = Config) -> Flask:
             return "вчера"
         if days < 7:
             return f"{days} {plural_ru(days, 'день', 'дня', 'дней')} назад"
-        if days < 30:
-            weeks = max(1, days // 7)
-            return f"{weeks} {plural_ru(weeks, 'неделю', 'недели', 'недель')} назад"
-        if days < 365:
-            months = max(1, days // 30)
-            return f"{months} {plural_ru(months, 'месяц', 'месяца', 'месяцев')} назад"
         return value.strftime("%d.%m.%Y")
 
     @app.template_filter("ru_date")

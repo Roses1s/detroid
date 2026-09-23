@@ -1,13 +1,9 @@
 <header class="o_navbar">
-  <a class="o_navbar__brand" href="{{ url_for('leads.kanban') }}">
+  <a class="o_navbar__brand" href="{{ url_for('main.dashboard') }}">
     <span class="o_navbar__app-name">{{ app_name }}</span>
   </a>
 
   <nav class="o_navbar__menu">
-    <a href="{{ url_for('leads.kanban') }}"
-       class="o_navbar__link {% if request.endpoint and request.endpoint.startswith('leads.') %}o_navbar__link--active{% endif %}">
-      Лиды
-    </a>
     {% if current_user.role == 'admin' %}
     <a href="{{ url_for('users.index') }}"
        class="o_navbar__link {% if request.endpoint and request.endpoint.startswith('users.') %}o_navbar__link--active{% endif %}">

@@ -1,10 +1,10 @@
-"""Пользователи — только для админа. Регистрация закрыта."""
+"""Пользователи — только для админа."""
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from ..extensions import db
-from ..models import Lead, LeadMessage, User
+from ..models import User
 
 users_bp = Blueprint("users", __name__, url_prefix="/users")
 
@@ -105,16 +105,6 @@ def delete(user_id: int):
         flash("Нельзя удалить самого себя.", "warning")
     else:
         label = user.display_name
-        # Отвязываем лиды и сообщения, чтобы FK не блокировал удаление
-        Lead.query.filter_by(manager_id=user.id).update({"manager_id": None})
-        LeadMessage.query.filter_by(author_id=user.id).update({"author_id": None})
-        # Legacy таблицы — пробуем отвязать, если есть
-        try:
-            from ..models.request import Request as Req, RequestMessage as ReqMsg
-            Req.query.filter_by(manager_id=user.id).update({"manager_id": None})
-            ReqMsg.query.filter_by(author_id=user.id).update({"author_id": None})
-        except Exception:
-            pass
         db.session.delete(user)
         db.session.commit()
         flash(f"Пользователь «{label}» удалён.", "info")
