@@ -1,0 +1,66 @@
+"""Главная страница (dashboard) и служебные страницы."""
+from datetime import datetime, timedelta
+
+from flask import Blueprint, render_template
+from flask_login import login_required
+from sqlalchemy import func
+
+from ..extensions import db
+from ..models.lead import Lead, LeadStage
+
+main_bp = Blueprint("main", __name__)
+
+
+@main_bp.route("/health")
+def health():
+    """Для мониторинга и docker-проверок: жив ли сервис."""
+    return {"status": "ok"}
+
+
+@main_bp.route("/")
+@login_required
+def dashboard():
+    # Нейтральная статистика: финальных стадий нет, все лиды равноправны.
+    total_leads = Lead.query.count()
+    pipeline_sum = (
+        db.session.query(func.coalesce(func.sum(Lead.expected_revenue), 0)).scalar()
+    )
+    week_ago = datetime.utcnow() - timedelta(days=7)
+    week_leads = Lead.query.filter(Lead.created_at >= week_ago).count()
+    avg_revenue = (
+        db.session.query(func.coalesce(func.avg(Lead.expected_revenue), 0)).scalar()
+    )
+    recent_leads = Lead.query.order_by(Lead.updated_at.desc()).limit(5).all()
+    return render_template(
+        "dashboard/index.html",
+        total_leads=total_leads,
+        pipeline_sum=float(pipeline_sum or 0),
+        week_leads=week_leads,
+        avg_revenue=float(avg_revenue or 0),
+        recent_leads=recent_leads,
+    )
+
+
+@main_bp.route("/reports")
+@login_required
+def reports():
+    """Простая воронка по стадиям: сколько лидов и на какую сумму в каждой."""
+    rows = (
+        db.session.query(
+            Lead.stage,
+            func.count(Lead.id),
+            func.coalesce(func.sum(Lead.expected_revenue), 0),
+        )
+        .group_by(Lead.stage)
+        .all()
+    )
+    funnel = [
+        {
+            "stage": stage.value if stage else "lead",
+            "title": stage.title if stage else "-",
+            "count": count,
+            "sum": float(total or 0),
+        }
+        for stage, count, total in rows
+    ]
+    return render_template("dashboard/reports.html", funnel=funnel)

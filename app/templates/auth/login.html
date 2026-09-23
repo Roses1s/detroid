@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Вход — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="o_login_wrap">
+  <div class="o_login_card">
+    <div class="o_login_card__logo">
+      <span class="o_login_card__icon">D</span>
+      <h1>{{ app_name }}</h1>
+      <p class="muted o_login_card__sub">CRM для логистики</p>
+    </div>
+
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="o_field_row">
+        <label class="o_label" style="display:block;margin-bottom:3px" for="email">Email</label>
+        <input class="input" type="email" id="email" name="email" required
+               placeholder="admin@example.com" autocomplete="username">
+      </div>
+      <div class="o_field_row">
+        <label class="o_label" style="display:block;margin-bottom:3px" for="password">Пароль</label>
+        <input class="input" type="password" id="password" name="password" required
+               placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div class="o_field_row">
+        <label class="form__check">
+          <input type="checkbox" name="remember" value="1"> Запомнить меня
+        </label>
+      </div>
+      <button type="submit" class="btn btn--primary btn--block">Войти</button>
+    </form>
+
+    <p class="o_login_card__hint">
+      <span class="muted">Аккаунты создаёт администратор в разделе «Пользователи».</span>
+    </p>
+  </div>
+</div>
+{% endblock %}

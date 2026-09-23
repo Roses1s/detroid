@@ -1,0 +1,139 @@
+{# Поиск по лидам 1в1 как в Odoo: чипсы + панель
+   (Фильтры / Группировать по / Избранное / Свой фильтр).
+   Контекст из _search_context + search_action; LeadStage — глобально. #}
+<div class="o_searchview" id="searchview">
+  <span class="o_searchview__icon">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><line x1="11" y1="11" x2="15" y2="15"/></svg>
+  </span>
+
+  <div class="o_searchview__chips">
+    {% if search_q %}
+      <span class="o_chip">«{{ search_q }}»
+        <a class="o_chip__x" href="{{ search_action }}?{{ qs(q='') }}">×</a>
+      </span>
+    {% endif %}
+    {% if active_stage %}
+      {% for s in LeadStage %}
+        {% if s.value == active_stage %}
+          <span class="o_chip">{{ s.title }}
+            <a class="o_chip__x" href="{{ search_action }}?{{ qs(stage='') }}">×</a>
+          </span>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    {% if active_manager %}
+      <span class="o_chip">{{ active_manager_name }}
+        <a class="o_chip__x" href="{{ search_action }}?{{ qs(manager_id='') }}">×</a>
+      </span>
+    {% endif %}
+    {% if active_priority %}
+      <span class="o_chip">{% if active_priority == '3' %}★★★{% elif active_priority == '2' %}★★{% elif active_priority == '1' %}★{% else %}Без приоритета{% endif %}
+        <a class="o_chip__x" href="{{ search_action }}?{{ qs(priority='') }}">×</a>
+      </span>
+    {% endif %}
+    {% if active_group != 'stage' %}
+      <span class="o_chip">Группировка: {{ group_modes[active_group] }}
+        <a class="o_chip__x" href="{{ search_action }}?{{ qs(group_by='') }}">×</a>
+      </span>
+    {% endif %}
+    {% for f in custom_filters %}
+      <span class="o_chip">{{ f.label }}
+        <a class="o_chip__x" href="{{ search_action }}?{{ qs_wo_flt(loop.index0) }}">×</a>
+      </span>
+    {% endfor %}
+  </div>
+
+  <form class="o_searchview__form" method="get" action="{{ search_action }}">
+    <input type="hidden" name="stage" value="{{ active_stage }}">
+    <input type="hidden" name="manager_id" value="{{ active_manager }}">
+    <input type="hidden" name="priority" value="{{ active_priority }}">
+    <input type="hidden" name="group_by" value="{{ active_group }}">
+    {% for raw in active_flts %}
+      <input type="hidden" name="flt" value="{{ raw }}">
+    {% endfor %}
+    <input type="text" name="q" class="o_searchview__input" placeholder="Поиск…" value="{{ search_q or '' }}" autocomplete="off">
+  </form>
+
+  <button type="button" class="o_searchview__toggle" title="Фильтры">▾</button>
+
+  <div class="o_searchview__dropdown" hidden>
+    <div class="o_searchview__title">Фильтры</div>
+    <a class="o_searchview__item {% if active_manager == 'me' %}o_searchview__item--active{% endif %}"
+       href="{{ search_action }}?{{ qs(manager_id=('' if active_manager == 'me' else 'me')) }}">
+      <span>{% if active_manager == 'me' %}✓ {% endif %}Мои лиды</span>
+    </a>
+    <a class="o_searchview__item {% if active_manager == 'none' %}o_searchview__item--active{% endif %}"
+       href="{{ search_action }}?{{ qs(manager_id=('' if active_manager == 'none' else 'none')) }}">
+      <span>{% if active_manager == 'none' %}✓ {% endif %}Без менеджера</span>
+    </a>
+    {% for m in managers %}
+      <a class="o_searchview__item {% if active_manager == m.id|string %}o_searchview__item--active{% endif %}"
+         href="{{ search_action }}?{{ qs(manager_id=('' if active_manager == m.id|string else m.id|string)) }}">
+        <span>{% if active_manager == m.id|string %}✓ {% endif %}{{ m.display_name }}</span>
+      </a>
+    {% endfor %}
+
+    <div class="o_searchview__title">Стадия</div>
+    {% for s in LeadStage %}
+      <a class="o_searchview__item {% if active_stage == s.value %}o_searchview__item--active{% endif %}"
+         href="{{ search_action }}?{{ qs(stage=('' if active_stage == s.value else s.value)) }}">
+        <span>{% if active_stage == s.value %}✓ {% endif %}{{ s.title }}</span>
+        <span class="o_searchview__count">{{ stage_counts.get(s.value, 0) }}</span>
+      </a>
+    {% endfor %}
+
+    <div class="o_searchview__title">Приоритет</div>
+    {% for p_value, p_label in [('3', '★★★ Высокий'), ('2', '★★ Средний'), ('1', '★ Низкий')] %}
+      <a class="o_searchview__item {% if active_priority == p_value %}o_searchview__item--active{% endif %}"
+         href="{{ search_action }}?{{ qs(priority=('' if active_priority == p_value else p_value)) }}">
+        <span>{% if active_priority == p_value %}✓ {% endif %}{{ p_label }}</span>
+      </a>
+    {% endfor %}
+
+    <div class="o_searchview__title">Группировать по</div>
+    {% for g_value, g_title in group_modes.items() %}
+      <a class="o_searchview__item {% if active_group == g_value %}o_searchview__item--active{% endif %}"
+         href="{{ search_action }}?{{ qs(group_by=('' if active_group == g_value else g_value)) }}">
+        <span>{% if active_group == g_value %}✓ {% endif %}{{ g_title }}</span>
+      </a>
+    {% endfor %}
+
+    <div class="o_searchview__title">Избранное</div>
+    <div id="fav-list">
+      {% for fav in favorites %}
+        <div class="o_searchview__fav">
+          <a class="o_searchview__item o_searchview__fav-link" href="{{ search_action }}?{{ fav.params }}">{{ fav.name }}</a>
+          <button type="button" class="o_searchview__fav-del" data-fav-del="{{ fav.id }}" title="Удалить «{{ fav.name }}»">×</button>
+        </div>
+      {% else %}
+        <div class="o_searchview__empty">Пока пусто — сохраните текущий поиск ниже</div>
+      {% endfor %}
+    </div>
+    <div class="o_searchview__fav-save">
+      <input type="text" class="input input--small" id="fav-name" placeholder="Название…" maxlength="80" autocomplete="off">
+      <button type="button" class="btn btn--secondary btn--small" id="fav-save">Сохранить поиск</button>
+    </div>
+
+    <button type="button" class="o_searchview__custom-toggle" id="custom-toggle">+ Добавить свой фильтр</button>
+    <div class="o_searchview__custom" id="custom-builder" hidden>
+      <select id="cf-field" class="input input--small">
+        <option value="stage">Стадия</option>
+        <option value="manager">Менеджер</option>
+        <option value="priority">Приоритет</option>
+        <option value="revenue">Сумма</option>
+        <option value="tag">Тег</option>
+        <option value="source">Источник</option>
+      </select>
+      <select id="cf-op" class="input input--small"></select>
+      <span id="cf-value-wrap"></span>
+      <button type="button" class="btn btn--primary btn--small" id="cf-add">Добавить</button>
+    </div>
+
+    {% if search_q or active_stage or active_manager or active_priority or active_group != 'stage' or custom_filters %}
+      <a class="o_searchview__reset link" href="{{ search_action }}">Сбросить всё</a>
+    {% endif %}
+  </div>
+
+  {# Справочники для конструктора фильтров #}
+  <script type="application/json" id="searchview-data">{{ searchview_data | tojson }}</script>
+</div>

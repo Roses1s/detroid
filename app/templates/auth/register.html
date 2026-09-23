@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Регистрация — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="o_login_wrap">
+  <div class="o_login_card">
+    <div class="o_login_card__logo">
+      <span class="o_login_card__icon">D</span>
+      <h1>Регистрация</h1>
+      <p class="muted o_login_card__sub">Первый пользователь станет администратором</p>
+    </div>
+
+    <form method="post">
+      <div class="o_field_row">
+        <label class="o_label" style="display:block;margin-bottom:3px" for="full_name">Имя</label>
+        <input class="input" type="text" id="full_name" name="full_name" placeholder="Иван Петров">
+      </div>
+      <div class="o_field_row">
+        <label class="o_label" style="display:block;margin-bottom:3px" for="username">Имя пользователя (логин)</label>
+        <input class="input" type="text" id="username" name="username" required placeholder="ivan">
+      </div>
+      <div class="o_field_row">
+        <label class="o_label" style="display:block;margin-bottom:3px" for="email">Email</label>
+        <input class="input" type="email" id="email" name="email" required placeholder="ivan@example.com">
+      </div>
+      <div class="o_field_row">
+        <label class="o_label" style="display:block;margin-bottom:3px" for="password">Пароль</label>
+        <input class="input" type="password" id="password" name="password" required placeholder="мин. 6 символов">
+      </div>
+      <div class="o_field_row">
+        <label class="o_label" style="display:block;margin-bottom:3px" for="password2">Пароль ещё раз</label>
+        <input class="input" type="password" id="password2" name="password2" required>
+      </div>
+      <button type="submit" class="btn btn--primary btn--block">Создать аккаунт</button>
+    </form>
+
+    <p class="o_login_card__hint">
+      Уже есть аккаунт? <a href="{{ url_for('auth.login') }}">Войти</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

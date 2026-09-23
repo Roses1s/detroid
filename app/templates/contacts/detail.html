@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ contact.full_name }} — {{ app_name }}{% endblock %}
+
+{% block control_panel %}
+<div class="o_control_panel">
+  <div class="o_cp_left">
+    <div class="o_cp_left_top">
+      <h1 class="o_breadcrumb">
+        <a class="o_breadcrumb__link" href="{{ url_for('contacts.contacts_list') }}">Контакты</a>
+        <span class="o_breadcrumb__sep">/</span>
+        <span class="o_breadcrumb__current">{{ contact.full_name }}</span>
+      </h1>
+    </div>
+    <div class="o_cp_buttons">
+      <a class="btn btn--primary" href="{{ url_for('contacts.contact_edit', contact_id=contact.id) }}">Изменить</a>
+      <a class="btn btn--secondary" href="{{ url_for('contacts.contact_create') }}">Создать</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="o_form_sheet_bg">
+  <div class="o_form_sheet">
+    <h2 class="o_sheet_title">{{ contact.full_name }}</h2>
+
+    <div class="o_group">
+      <div class="o_group_col">
+        <span class="o_label">Телефон</span>
+        <span class="o_field">{{ contact.phone or "—" }}</span>
+        <span class="o_label">Email</span>
+        <span class="o_field">{{ contact.email or "—" }}</span>
+        <span class="o_label">Должность</span>
+        <span class="o_field">{{ contact.position or "—" }}</span>
+      </div>
+      <div class="o_group_col">
+        <span class="o_label">Компания</span>
+        <span class="o_field">
+          {% if contact.company %}
+            <a href="{{ url_for('contacts.company_detail', company_id=contact.company.id) }}">{{ contact.company.name }}</a>
+          {% else %}—{% endif %}
+        </span>
+        <span class="o_label">Создан</span>
+        <span class="o_field">{{ contact.created_at.strftime("%d.%m.%Y") if contact.created_at else "—" }}</span>
+      </div>
+    </div>
+
+    {% if contact.notes %}
+    <div class="o_sheet_section">
+      <div class="o_sheet_section__title">Заметки</div>
+      <p class="pre-line">{{ contact.notes }}</p>
+    </div>
+    {% endif %}
+
+    <div class="o_sheet_section">
+      <div class="o_sheet_section__title">Лиды ({{ leads | length }})</div>
+      {% if leads %}
+      <div class="o_list_view">
+        <table>
+          <thead><tr><th>Название</th><th>Стадия</th><th>Выручка</th></tr></thead>
+          <tbody>
+            {% for lead in leads %}
+            <tr>
+              <td><a href="{{ url_for('leads.detail', lead_id=lead.id) }}">{{ lead.title }}</a></td>
+              <td><span class="stage-badge {{ lead.stage.css_class }}">{{ lead.stage.title }}</span></td>
+              <td>{{ lead.expected_revenue | money }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <p class="muted">С этим контактом пока не связано ни одного лида.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+<header class="o_navbar">
+  <a class="o_navbar__brand" href="{{ url_for('main.dashboard') }}">
+    <span class="o_navbar__app-name">{{ app_name }}</span>
+  </a>
+
+  <nav class="o_navbar__menu">
+    <a href="{{ url_for('leads.kanban') }}"
+       class="o_navbar__link {% if request.endpoint and request.endpoint.startswith('leads.') %}o_navbar__link--active{% endif %}">
+      Лиды
+    </a>
+    <a href="{{ url_for('contacts.contacts_list') }}"
+       class="o_navbar__link {% if request.endpoint and request.endpoint.startswith('contacts.') and 'compan' not in request.endpoint %}o_navbar__link--active{% endif %}">
+      Контакты
+    </a>
+    <a href="{{ url_for('contacts.companies_list') }}"
+       class="o_navbar__link {% if request.endpoint and 'compan' in request.endpoint %}o_navbar__link--active{% endif %}">
+      Компании
+    </a>
+    <a href="{{ url_for('requests.index') }}"
+       class="o_navbar__link {% if request.endpoint and request.endpoint.startswith('requests.') %}o_navbar__link--active{% endif %}">
+      Заявки
+    </a>
+    <a href="{{ url_for('main.reports') }}"
+       class="o_navbar__link {% if request.endpoint == 'main.reports' %}o_navbar__link--active{% endif %}">
+      Отчёты
+    </a>
+    {% if current_user.role == 'admin' %}
+    <a href="{{ url_for('users.index') }}"
+       class="o_navbar__link {% if request.endpoint and request.endpoint.startswith('users.') %}o_navbar__link--active{% endif %}">
+      Пользователи
+    </a>
+    {% endif %}
+  </nav>
+
+  <div class="o_navbar__systray">
+    <div class="o_navbar__user">
+      <button type="button" class="o_navbar__user-btn">
+        <span class="o_avatar o_avatar--sm o_avatar_c{{ current_user.display_name | avatar_color }}">{{ current_user.display_name[:1] }}</span>
+        <span>{{ current_user.display_name }}</span>
+      </button>
+      <div class="o_navbar__user-menu">
+        <div class="o_navbar__user-mail">{{ current_user.email }}{% if current_user.role == 'admin' %} · admin{% endif %}</div>
+        <a class="o_navbar__user-item" href="{{ url_for('main.dashboard') }}">Главная</a>
+        <a class="o_navbar__user-item" href="{{ url_for('auth.change_password') }}">Сменить пароль</a>
+        <button type="button" class="o_navbar__user-item o_theme_row" id="theme-toggle" role="switch" aria-checked="false">
+          <span>Тёмный режим</span>
+          <span class="o_switch"><span class="o_switch__knob"></span></span>
+        </button>
+        {# Выход — форма с POST: ссылку-выход могла бы дёрнуть чужая страница #}
+        <form method="post" action="{{ url_for('auth.logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="o_navbar__user-item" style="width:100%;text-align:left">Выйти</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</header>

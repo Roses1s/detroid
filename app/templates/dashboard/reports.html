@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Отчёты — {{ app_name }}{% endblock %}
+
+{% block control_panel %}
+<div class="o_control_panel">
+  <div class="o_cp_left">
+    <div class="o_cp_left_top">
+      <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Отчёты</span></h1>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="o_dashboard">
+  <div class="o_panel">
+    <div class="o_panel__head"><h2>Воронка продаж (по стадиям)</h2></div>
+    {% if funnel %}
+    <div class="o_list_view">
+      <table>
+        <thead><tr><th>Стадия</th><th>Кол-во</th><th>Сумма</th><th></th></tr></thead>
+        <tbody>
+          {% set max_sum = funnel | map(attribute='sum') | max %}
+          {% for row in funnel %}
+          <tr>
+            <td>{{ row.title }}</td>
+            <td>{{ row.count }}</td>
+            <td>{{ row.sum | money }}</td>
+            <td class="funnel-bar-cell">
+              <div class="funnel-bar" style="width: {{ (row.sum / max_sum * 100) if max_sum else 0 }}%"></div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p class="muted">Пока нет данных.</p>
+    {% endif %}
+  </div>
+
+  <div class="o_panel">
+    <div class="o_panel__head"><h2>Скоро (ЭТАП 5)</h2></div>
+    <p class="muted">Графики по менеджерам, конверсия, отчёты по периодам, экспорт в Excel.</p>
+  </div>
+</div>
+{% endblock %}

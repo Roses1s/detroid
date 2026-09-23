@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Ошибка сервера — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="o_login_wrap">
+  <div class="o_login_card" style="text-align:center">
+    <h1 style="font-size:44px;margin-bottom:8px">500</h1>
+    <p class="muted">Что-то пошло не так на сервере. Попробуйте обновить страницу через минуту.</p>
+    <p style="margin-top:16px">
+      <a class="btn btn--primary" href="{{ url_for('main.dashboard') }}">На главную</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

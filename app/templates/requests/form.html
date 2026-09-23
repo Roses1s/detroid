@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}{% if is_new %}Новая заявка{% else %}{{ req.number or '' }} — {{ req.title }}{% endif %} — {{ app_name }}{% endblock %}
+
+{% block control_panel %}
+<div class="o_control_panel">
+  <div class="o_cp_left">
+    <div class="o_cp_left_top">
+      <h1 class="o_breadcrumb">
+        <a class="o_breadcrumb__link" href="{{ url_for('requests.index') }}">Заявки</a>
+        <span class="o_breadcrumb__sep">/</span>
+        <span class="o_breadcrumb__current">{% if is_new %}Новая{% else %}{{ req.number or ("#%d" % req.id) }}{% endif %}</span>
+      </h1>
+    </div>
+    <div class="o_cp_buttons">
+      <button type="submit" class="btn btn--primary" form="request-form">Сохранить</button>
+      {% if is_new %}
+        <a class="btn btn--secondary" href="{{ url_for('requests.index') }}">Отмена</a>
+      {% else %}
+        <a class="btn btn--secondary" href="{{ url_for('requests.detail', request_id=req.id) }}">Отмена</a>
+        <button type="submit" class="btn btn--danger" form="delete-form"
+                onclick="return confirm('Удалить заявку «{{ req.number or req.title }}» безвозвратно?')">Удалить</button>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="o_form_sheet_bg">
+  <div class="o_form_sheet">
+    <form method="post" id="request-form" class="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% if not is_new %}
+        <p class="muted">Номер: <strong>{{ req.number or ("#%d" % req.id) }}</strong> · присваивается автоматически</p>
+      {% endif %}
+      <input class="input form__title-input" type="text" name="title" required
+             value="{{ req.title or '' }}" placeholder="Название заявки">
+
+      <div class="o_group">
+        <div class="o_group_col">
+          <label class="o_label" for="origin">Откуда</label>
+          <input class="input" type="text" id="origin" name="origin"
+                 value="{{ req.origin or '' }}" placeholder="Москва">
+          <label class="o_label" for="destination">Куда</label>
+          <input class="input" type="text" id="destination" name="destination"
+                 value="{{ req.destination or '' }}" placeholder="Казань">
+          <label class="o_label" for="cargo_type">Груз</label>
+          <input class="input" type="text" id="cargo_type" name="cargo_type"
+                 value="{{ req.cargo_type or '' }}" placeholder="Паллеты, 20 шт">
+          <label class="o_label" for="transport_type">Транспорт</label>
+          <select class="input" id="transport_type" name="transport_type">
+            {% for t_value, t_label in [('', '—'), ('авто', 'Авто'), ('ж/д', 'Ж/д'), ('авиа', 'Авиа'), ('море', 'Море')] %}
+              <option value="{{ t_value }}" {% if (req.transport_type or '') == t_value %}selected{% endif %}>{{ t_label }}</option>
+            {% endfor %}
+          </select>
+          <label class="o_label" for="weight">Вес (кг)</label>
+          <input class="input" type="number" step="0.001" min="0" id="weight" name="weight"
+                 value="{{ req.weight if req.weight is not none else '' }}">
+          <label class="o_label" for="volume">Объём (м³)</label>
+          <input class="input" type="number" step="0.001" min="0" id="volume" name="volume"
+                 value="{{ req.volume if req.volume is not none else '' }}">
+        </div>
+        <div class="o_group_col">
+          <label class="o_label" for="status">Статус</label>
+          <select class="input" id="status" name="status">
+            {% for s in statuses %}
+              <option value="{{ s.value }}" {% if req.status and req.status.value == s.value %}selected{% endif %}>{{ s.title }}</option>
+            {% endfor %}
+          </select>
+          <label class="o_label" for="load_date">Дата загрузки</label>
+          <input class="input" type="date" id="load_date" name="load_date"
+                 value="{{ req.load_date.isoformat() if req.load_date else '' }}">
+          <label class="o_label" for="unload_date">Дата выгрузки</label>
+          <input class="input" type="date" id="unload_date" name="unload_date"
+                 value="{{ req.unload_date.isoformat() if req.unload_date else '' }}">
+          <label class="o_label" for="client_price">Цена клиенту (₽)</label>
+          <input class="input" type="number" step="0.01" min="0" id="client_price" name="client_price"
+                 value="{{ req.client_price or 0 }}">
+          <label class="o_label" for="cost">Себестоимость (₽)</label>
+          <input class="input" type="number" step="0.01" min="0" id="cost" name="cost"
+                 value="{{ req.cost or 0 }}">
+          <span class="o_label">Маржа</span>
+          <span class="o_field muted">считается автоматически: цена − себестоимость</span>
+        </div>
+      </div>
+
+      <div class="o_sheet_section">
+        <div class="o_sheet_section__title">Перевозчик</div>
+        <div class="o_group">
+          <div class="o_group_col">
+            <label class="o_label" for="carrier">Перевозчик</label>
+            <input class="input" type="text" id="carrier" name="carrier"
+                   value="{{ req.carrier or '' }}" placeholder="ИП Дальнобойщиков">
+            <label class="o_label" for="vehicle_number">Госномер</label>
+            <input class="input" type="text" id="vehicle_number" name="vehicle_number"
+                   value="{{ req.vehicle_number or '' }}" placeholder="А123БВ 777">
+          </div>
+          <div class="o_group_col">
+            <label class="o_label" for="driver_name">Водитель</label>
+            <input class="input" type="text" id="driver_name" name="driver_name"
+                   value="{{ req.driver_name or '' }}" placeholder="Олег Дальнобойщиков">
+            <label class="o_label" for="driver_phone">Телефон водителя</label>
+            <input class="input" type="tel" id="driver_phone" name="driver_phone"
+                   value="{{ req.driver_phone or '' }}" placeholder="+7 (___) ___-__-__">
+          </div>
+        </div>
+      </div>
+
+      <div class="o_sheet_section">
+        <div class="o_sheet_section__title">Связи</div>
+        <div class="o_group">
+          <div class="o_group_col">
+            <label class="o_label" for="manager_id">Менеджер (продавец)</label>
+            <select class="input" id="manager_id" name="manager_id">
+              <option value="">—</option>
+              {% for m in managers %}
+                <option value="{{ m.id }}" {% if req.manager_id == m.id %}selected{% endif %}>{{ m.display_name }}</option>
+              {% endfor %}
+            </select>
+            <label class="o_label" for="lead_id">Лид</label>
+            <select class="input" id="lead_id" name="lead_id">
+              <option value="">—</option>
+              {% for l in leads %}
+                <option value="{{ l.id }}" {% if req.lead_id == l.id %}selected{% endif %}>{{ l.title }}</option>
+              {% endfor %}
+            </select>
+            <label class="o_label" for="company_id">Компания</label>
+            <select class="input" id="company_id" name="company_id">
+              <option value="">—</option>
+              {% for c in companies %}
+                <option value="{{ c.id }}" {% if req.company_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="o_group_col">
+            <label class="o_label" for="contact_id">Контакт</label>
+            <select class="input" id="contact_id" name="contact_id">
+              <option value="">—</option>
+              {% for c in contacts %}
+                <option value="{{ c.id }}" {% if req.contact_id == c.id %}selected{% endif %}>{{ c.full_name }}{% if c.company %} ({{ c.company.name }}){% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="o_sheet_section">
+        <div class="o_sheet_section__title">Описание</div>
+        <textarea class="input input--area" name="notes" rows="4"
+                  placeholder="Детали рейса, договорённости с водителем…">{{ req.notes or '' }}</textarea>
+      </div>
+    </form>
+
+    {% if not is_new %}
+    <form id="delete-form" method="post"
+          action="{{ url_for('requests.delete', request_id=req.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"></form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

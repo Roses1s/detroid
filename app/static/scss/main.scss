@@ -1,0 +1,64 @@
+// Detroid CRM — тёмная тема по референсу.
+// Компиляция: hand-compiled в ../css/main.css (правишь SCSS → обнови CSS).
+@import "variables";
+@import "navbar";
+@import "controlpanel";
+@import "kanban";
+@import "forms";
+@import "cards";
+
+// ─── База ──────────────────────────────────────────────
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: $font-family;
+  font-size: $font-size-base;
+  background: $bg-content;
+  color: $text-main;
+}
+
+h1 { font-size: 20px; margin: 0; font-weight: 500; }
+h2 { font-size: 15px; }
+.muted { color: $text-muted; }
+.pre-line { white-space: pre-line; }
+
+// Контент под фиксированной панелью
+.o_action {
+  padding-top: $navbar-height;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+
+  &--guest { padding-top: 0; display: block; }
+}
+
+// Flash-уведомления — тосты справа сверху
+.o_toasts {
+  position: fixed;
+  top: $navbar-height + 8px;
+  right: 16px;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 360px;
+}
+
+.o_toast {
+  padding: 10px 14px;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-pop;
+  font-size: 13px;
+  background: $bg-sheet;
+  border: 1px solid $border;
+  border-left: 4px solid $info;
+  color: $text-main;
+
+  &--success { border-left-color: $success; }
+  &--danger { border-left-color: $danger; }
+  &--warning { border-left-color: $warning; }
+  &--info { border-left-color: $info; }
+}

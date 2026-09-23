@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {# CSRF-токен: все формы берут его скрытым полем, AJAX — заголовком (см. app.js) #}
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=19">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-light.css') }}?v=19">
+  <script>
+    /* Тема до отрисовки (без мигания): localStorage → data-theme, по умолчанию светлая */
+    (function(){try{document.documentElement.setAttribute("data-theme",localStorage.getItem("detroid-theme")||"light");}catch(e){document.documentElement.setAttribute("data-theme","light");}})();
+  </script>
+  {# Оригинальная иконка с GitHub icon.svg — без фиолетового квадрата, только пантера на вкладке браузера #}
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}?v=8">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='img/favicon-32.png') }}?v=8">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='img/favicon-16.png') }}?v=8">
+  <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='img/favicon.png') }}?v=8">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}?v=8">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% if current_user.is_authenticated %}
+    {% include "components/navbar.html" %}
+  {% endif %}
+
+  <div class="o_action {% if not current_user.is_authenticated %}o_action--guest{% endif %}">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="o_toasts">
+          {% for category, message in messages %}
+            <div class="o_toast o_toast--{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block control_panel %}{% endblock %}
+    {% block content %}{% endblock %}
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/theme.js') }}?v=4"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,4 @@
+Сюда положи SSL-сертификаты (см. docs/ETAP0_SERVER_SETUP.md, шаг про HTTPS):
+  - fullchain.pem
+  - privkey.pem
+Сами ключи в Git НЕ коммитятся (.gitignore).

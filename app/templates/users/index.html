@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Пользователи — {{ app_name }}{% endblock %}
+
+{% block control_panel %}
+<div class="o_control_panel">
+  <div class="o_cp_left o_cp_left--row">
+    <div class="o_cp_left_top">
+      <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Пользователи</span></h1>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="o_list_wrap">
+  {# Сначала — создание нового пользователя, ниже — список существующих #}
+  <div class="o_panel">
+    <div class="o_panel__head"><h2>Создать пользователя</h2></div>
+    <form method="post" action="{{ url_for('users.create') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="o_group">
+        <div class="o_group_col">
+          <label class="o_label o_label--required" for="username">Логин</label>
+          <input class="input" id="username" name="username" required placeholder="ivan">
+          <label class="o_label o_label--required" for="email">Email</label>
+          <input class="input" id="email" name="email" type="email" required placeholder="ivan@example.com">
+          <label class="o_label" for="full_name">Имя и фамилия</label>
+          <input class="input" id="full_name" name="full_name" placeholder="Иван Петров">
+        </div>
+        <div class="o_group_col">
+          <label class="o_label o_label--required" for="password">Пароль</label>
+          <input class="input" id="password" name="password" type="password" required placeholder="мин. 6 символов">
+          <label class="o_label" for="role">Роль</label>
+          <select class="input" id="role" name="role">
+            <option value="manager" selected>Менеджер</option>
+            <option value="admin">Администратор</option>
+          </select>
+          <span></span>
+          <button type="submit" class="btn btn--primary" style="justify-self:start">Создать</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="o_list_view" style="margin-top:16px">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:40px">№</th>
+          <th>Имя</th><th>Логин</th><th>Email</th><th>Роль</th><th>Состояние</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          {# Номер по порядку создания: 1 — самый первый пользователь (админ) #}
+          <td class="muted">{{ u.id }}</td>
+          <td>{{ u.display_name }}{% if u.id == current_user.id %} <span class="muted">(вы)</span>{% endif %}</td>
+          <td>{{ u.username }}</td>
+          <td>{{ u.email }}</td>
+          <td>{{ "Администратор" if u.role == "admin" else "Менеджер" }}</td>
+          <td>{{ "Активен" if u.is_active else "Заблокирован" }}</td>
+          <td style="text-align:right;white-space:nowrap">
+            <a class="btn btn--small btn--secondary" href="{{ url_for('users.edit', user_id=u.id) }}">Изменить</a>
+            {% if u.id != current_user.id %}
+            <form method="post" action="{{ url_for('users.toggle', user_id=u.id) }}" style="display:inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn--small {{ 'btn--danger' if u.is_active else 'btn--secondary' }}">
+                {{ "Заблокировать" if u.is_active else "Разблокировать" }}
+              </button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

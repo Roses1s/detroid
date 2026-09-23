@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Главная — {{ app_name }}{% endblock %}
+
+{% block control_panel %}
+<div class="o_control_panel">
+  <div class="o_cp_left">
+    <div class="o_cp_left_top">
+      <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Главная</span></h1>
+    </div>
+    <div class="o_cp_buttons">
+      <a class="btn btn--primary" href="{{ url_for('leads.create') }}">Создать лид</a>
+      <a class="btn btn--secondary" href="{{ url_for('leads.kanban') }}">К канбану</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="o_dashboard">
+  <div class="o_stat_grid">
+    <div class="o_stat">
+      <div class="o_stat__label">Всего лидов</div>
+      <div class="o_stat__value">{{ total_leads }}</div>
+    </div>
+    <div class="o_stat">
+      <div class="o_stat__label">В воронке</div>
+      <div class="o_stat__value">{{ pipeline_sum | money }}</div>
+    </div>
+    <div class="o_stat">
+      <div class="o_stat__label">Новых за неделю</div>
+      <div class="o_stat__value">{{ week_leads }}</div>
+    </div>
+    <div class="o_stat">
+      <div class="o_stat__label">Средний чек</div>
+      <div class="o_stat__value">{{ avg_revenue | money }}</div>
+    </div>
+  </div>
+
+  <div class="o_panel">
+    <div class="o_panel__head">
+      <h2>Последние лиды</h2>
+      <a class="link" href="{{ url_for('leads.kanban') }}">Открыть канбан →</a>
+    </div>
+    {% if recent_leads %}
+    <div class="o_list_view">
+      <table>
+        <thead>
+          <tr><th>Название</th><th>Контакт</th><th>Стадия</th><th>Выручка</th><th>Менеджер</th></tr>
+        </thead>
+        <tbody>
+          {% for lead in recent_leads %}
+          <tr>
+            <td><a href="{{ url_for('leads.detail', lead_id=lead.id) }}">{{ lead.title }}</a></td>
+            <td>{{ lead.contact_name or "" }}</td>
+            <td><span class="stage-badge {{ lead.stage.css_class }}">{{ lead.stage.title }}</span></td>
+            <td>{{ lead.expected_revenue | money }}</td>
+            <td>{{ lead.manager.display_name if lead.manager else "" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p class="muted">Лидов пока нет. <a href="{{ url_for('leads.create') }}">Создайте первый</a>.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

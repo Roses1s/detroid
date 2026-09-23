@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Пользователь №{{ user.id }} — {{ app_name }}{% endblock %}
+
+{% block control_panel %}
+<div class="o_control_panel">
+  <div class="o_cp_left o_cp_left--row">
+    <div class="o_cp_left_top">
+      <h1 class="o_breadcrumb">
+        <a class="o_breadcrumb__link" href="{{ url_for('users.index') }}">Пользователи</a>
+        <span class="o_breadcrumb__sep">/</span>
+        <span class="o_breadcrumb__current">№{{ user.id }} · {{ user.display_name }}</span>
+      </h1>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="o_form_sheet_bg">
+  <div class="o_form_sheet" style="max-width:640px">
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="o_group" style="grid-template-columns:1fr">
+        <div class="o_group_col">
+          <label class="o_label o_label--required" for="username">Логин</label>
+          <input class="input" id="username" name="username" required value="{{ user.username }}">
+          <label class="o_label o_label--required" for="email">Email</label>
+          <input class="input" id="email" name="email" type="email" required value="{{ user.email }}">
+          <label class="o_label" for="full_name">Имя и фамилия</label>
+          <input class="input" id="full_name" name="full_name" value="{{ user.full_name }}">
+          <label class="o_label" for="role">Роль</label>
+          <select class="input" id="role" name="role" {% if user.id == current_user.id %}disabled title="Нельзя менять собственную роль"{% endif %}>
+            <option value="manager" {% if user.role == 'manager' %}selected{% endif %}>Менеджер</option>
+            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Администратор</option>
+          </select>
+          {% if user.id == current_user.id %}
+            {# Отключённый select не шлёт значение — дублируем его скрытым полем #}
+            <input type="hidden" name="role" value="{{ user.role }}">
+            <span class="muted" style="font-size:12px">Собственную роль менять нельзя.</span>
+          {% endif %}
+          <label class="o_label" for="password">Новый пароль</label>
+          <input class="input" id="password" name="password" type="password"
+                 placeholder="Оставьте пустым, чтобы не менять" autocomplete="new-password">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button type="submit" class="btn btn--primary">Сохранить</button>
+        <a class="btn btn--secondary" href="{{ url_for('users.index') }}">Отмена</a>
+      </div>
+    </form>
+
+    {% if user.id != current_user.id %}
+    <div style="margin-top:32px;padding-top:16px;border-top:1px solid var(--border, #DEE2E6)">
+      <h3 style="font-size:14px;color:#DC3545;margin-bottom:8px">Опасная зона</h3>
+      <p class="muted" style="font-size:12px;margin-bottom:8px">Удаление безвозвратно. Лиды и заявки пользователя останутся без ответственного.</p>
+      <form method="post" action="{{ url_for('users.delete', user_id=user.id) }}"
+            onsubmit="return confirm('Удалить пользователя «{{ user.display_name }}»? Его лиды и заявки останутся без ответственного.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn--small btn--danger">Удалить пользователя</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

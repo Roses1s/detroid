@@ -1,0 +1,282 @@
+/* Detroid CRM — светлая тема 1в1 как в Odoo (crm.adktrans.ru) web.assets_web.min.css
+   :root --body-bg #F9FAFB, --body-color #374151, --gray-100 #F9FAFB, --gray-200 #e7e9ed,
+   --gray-300 #d8dadd, --gray-600 #5f636f, --gray-800 #1F2937, --gray-900 #111827,
+   --primary #714B67, --secondary #d8dadd, --success #28a745, --info #17a2b8,
+   --warning #e99d00, --danger #d44c59, --link #017e84, --o-cc5-bg #111827
+   Размеры как в dark: KanbanRecord-width 320px, padding 8px, gap 5px, Group padding 16px
+*/
+
+/* ─── База ─── */
+html[data-theme="light"] body{background:#F9FAFB;color:#374151}
+html[data-theme="light"] .muted{color:#5f636f}
+html[data-theme="light"]{--body-bg:#F9FAFB;--body-color:#374151;--gray-100:#F9FAFB;--gray-200:#e7e9ed;--gray-300:#d8dadd;--gray-400:#9a9ca5;--gray-500:#7c7f89;--gray-600:#5f636f;--gray-700:#374151;--gray-800:#1F2937;--gray-900:#111827;--primary:#714B67;--secondary:#d8dadd;--success:#28a745;--info:#17a2b8;--warning:#e99d00;--danger:#d44c59;--link:#017e84;--Kanban-background:#F9FAFB;--KanbanGroup-background:#F9FAFB;--KanbanGroup-padding-h:16px;--KanbanGroup-padding-bottom:16px;--KanbanRecord-width:320px;--KanbanRecord--small-width:300px;--KanbanRecord-margin-v:8px;--KanbanRecord-margin-h:8px;--KanbanRecord-padding-v:8px;--KanbanRecord-padding-h:8px;--KanbanRecord-gap-v:5px;--KanbanColumn---highlight-background:#e6f2f3;--KanbanColumn---highlight-border:#017e84;--formView-sheetBg-padding-x:16px;--formView-sheet-padding-y:16px;--formView-sheet-padding-x:16px;--formView-sheet-margin-x:0;--o-navbar-height:46px;--NavBar-entry-height:calc(var(--o-navbar-height) - 20px);--NavBar-entry-margin-left:1px;--NavBar-entry-margin-right:1px;--NavBar-entry-padding-left:0.63em;--NavBar-entry-padding-right:0.63em;--NavBar-entry-color:#1F2937;--NavBar-entry-color--hover:#111827;--ListRenderer-table-padding-x:16px;--ListRenderer-thead-padding-y:0.5rem;--o-input-border-color:#e7e9ed;--o-caret-color:#374151;}
+
+/* ─── Навбар — белый как в Odoo light — 1в1 (chunk 3 navbar.variables) ─── */
+html[data-theme="light"] .o_main_navbar .o_menu_toggle, html[data-theme="light"] .o_main_navbar .o_menu_brand, html[data-theme="light"] .o_main_navbar .o_navbar_apps_menu .dropdown-toggle, html[data-theme="light"] .o_main_navbar .o_nav_entry, html[data-theme="light"] .o_main_navbar .dropdown-toggle{position:relative;display:flex;align-items:center;width:auto;height:calc(var(--o-navbar-height) - 20px);border-radius:0.25rem;user-select:none;background:transparent;font-size:1em;color:var(--NavBar-entry-color, #1F2937)}
+html[data-theme="light"] .o_main_navbar .o_menu_toggle:hover, html[data-theme="light"] .o_main_navbar .o_menu_brand:hover, html[data-theme="light"] .o_main_navbar .o_nav_entry:hover, html[data-theme="light"] .o_main_navbar .dropdown-toggle:hover{color:var(--NavBar-entry-color--hover, #111827)}
+html[data-theme="light"] .o_main_navbar .o_menu_toggle, html[data-theme="light"] .o_main_navbar .o_menu_brand, html[data-theme="light"] .o_main_navbar .o_nav_entry, html[data-theme="light"] .o_main_navbar .dropdown-toggle{margin:0;margin-left:var(--NavBar-entry-margin-left, 1px);margin-right:var(--NavBar-entry-margin-right, 1px);padding:0;padding-left:var(--NavBar-entry-padding-left, 0.63em);padding-right:var(--NavBar-entry-padding-right, 0.63em);line-height:calc(var(--o-navbar-height) - 20px)}
+/* без разделительной полосы как в Odoo — navbar и control_panel один цвет #FFFFFF */
+html[data-theme="light"] .o_navbar,
+html[data-theme="light"] .o_main_navbar{background:#FFFFFF;border-bottom:none;padding:8px 16px;height:46px;display:flex;align-items:center;gap:0;z-index:100}
+html[data-theme="light"] .o_navbar__brand{border-right-color:#d8dadd}
+html[data-theme="light"] .o_navbar__app-name{color:#111827}
+html[data-theme="light"] .o_navbar__app-icon,
+html[data-theme="light"] img.o_navbar__app-icon{filter:none;background:transparent;box-shadow:none}
+html[data-theme="light"] .o_navbar__link{color:#1F2937}
+html[data-theme="light"] .o_navbar__link:hover{background:#e7e9ed;color:#111827}
+html[data-theme="light"] .o_navbar__link--active{color:#111827;background:#e7e9ed;font-weight:500}
+html[data-theme="light"] .o_navbar__systray{border-left-color:#d8dadd}
+html[data-theme="light"] .o_navbar__user-btn{color:#1F2937}
+html[data-theme="light"] .o_navbar__user-btn:hover{background:#e7e9ed;color:#111827}
+html[data-theme="light"] .o_navbar__user-menu{background:#FFFFFF;border-color:#d8dadd;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+html[data-theme="light"] .o_navbar__user-item{color:#374151;background:transparent;border:none;width:100%;text-align:left;font-family:inherit;cursor:pointer}
+html[data-theme="light"] .o_navbar__user-item:hover{background:#F9FAFB;color:#111827}
+html[data-theme="light"] .o_navbar__user-item:focus{outline:none;background:#F9FAFB}
+html[data-theme="light"] .o_theme_row{background:transparent;border:none;width:100%;text-align:left}
+html[data-theme="light"] .o_theme_row:hover{background:#F9FAFB}
+html[data-theme="light"] .o_theme_row[aria-checked="false"] .o_switch{background:#d8dadd}
+html[data-theme="light"] .o_theme_row[aria-checked="false"] .o_switch__knob{left:2px}
+html[data-theme="light"] .o_theme_row[aria-checked="true"] .o_switch{background:#34c759}
+html[data-theme="light"] .o_theme_row[aria-checked="true"] .o_switch__knob{left:16px}
+html[data-theme="light"] .o_switch{background:#d8dadd}
+html[data-theme="light"] .o_switch__knob{left:2px}
+html[data-theme="light"] .o_navbar__user-mail{color:#5f636f;border-bottom-color:#d8dadd}
+
+/* ─── Панель управления — 1в1 как в Odoo light ─── */
+html[data-theme="light"] .o_control_panel{background:#FFFFFF;border-bottom-color:#d8dadd;padding:8px 16px;position:sticky;top:46px;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+html[data-theme="light"] .o_control_panel .o_cp_left{display:flex;flex-direction:column;gap:8px;min-width:0}
+html[data-theme="light"] .o_control_panel .o_cp_left--row{flex-direction:row;align-items:center}
+html[data-theme="light"] .o_control_panel .o_cp_center{flex:1 1 280px;display:flex;justify-content:center;min-width:0}
+html[data-theme="light"] .o_control_panel .o_cp_center .o_searchview{width:100%;max-width:640px}
+html[data-theme="light"] .o_control_panel .o_cp_right{display:flex;align-items:center;gap:8px;margin-left:auto}
+html[data-theme="light"] .o_control_panel{background:#FFFFFF;border-bottom-color:#d8dadd}
+html[data-theme="light"] .o_breadcrumb__link{color:#5f636f}
+html[data-theme="light"] .o_breadcrumb__link:hover{color:#017e84}
+html[data-theme="light"] .o_breadcrumb__sep{color:#9a9ca5}
+html[data-theme="light"] .o_breadcrumb__current{color:#111827;font-weight:600}
+html[data-theme="light"] .o_view_switcher{border-color:#d8dadd}
+html[data-theme="light"] .o_view_switcher__btn{color:#5f636f}
+html[data-theme="light"] .o_view_switcher__btn+.o_view_switcher__btn{border-left-color:#d8dadd}
+html[data-theme="light"] .o_view_switcher__btn:hover{background:#e7e9ed;color:#1F2937}
+html[data-theme="light"] .o_view_switcher__btn--active{background:#e7e9ed;color:#111827}
+html[data-theme="light"] .o_searchview{background:#FFFFFF;border-color:#d8dadd}
+html[data-theme="light"] .o_searchview:focus-within{border-color:#714B67}
+html[data-theme="light"] .o_searchview__icon{color:#5f636f}
+html[data-theme="light"] .o_searchview__input{color:#1F2937}
+html[data-theme="light"] .o_searchview__input::placeholder{color:#9a9ca5}
+html[data-theme="light"] .o_searchview__toggle{color:#5f636f;border-left-color:#d8dadd}
+html[data-theme="light"] .o_searchview__toggle:hover{color:#111827}
+html[data-theme="light"] .o_searchview__dropdown{background:#FFFFFF;border-color:#d8dadd;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+html[data-theme="light"] .o_searchview__title{color:#5f636f}
+html[data-theme="light"] .o_searchview__item{color:#1F2937}
+html[data-theme="light"] .o_searchview__item:hover{background:#F9FAFB}
+html[data-theme="light"] .o_searchview__item--active{color:#714B67;font-weight:600}
+html[data-theme="light"] .o_searchview__count{color:#5f636f}
+html[data-theme="light"] .o_searchview__reset{border-top-color:#d8dadd}
+html[data-theme="light"] .o_chip{background:#e7e9ed;color:#1F2937}
+html[data-theme="light"] .o_chip__x{color:#5f636f}
+html[data-theme="light"] .o_chip__x:hover{background:#d8dadd;color:#111827}
+html[data-theme="light"] .o_group_row td{background:#e7e9ed;color:#1F2937}
+
+/* ─── Канбан — 1в1 как в Odoo light (chunk 77-80) ─── */
+html[data-theme="light"] .o_kanban_renderer{--Kanban-background:#F9FAFB;--Kanban-gap:unset;--Kanban-padding:0;--KanbanGroup-background:var(--Kanban-background);--KanbanGroup-padding-h:16px;--KanbanGroup-padding-bottom:16px;--KanbanRecord-width:320px;--KanbanRecord-margin-v:8px;--KanbanRecord-margin-h:8px;--KanbanRecord-padding-v:8px;--KanbanRecord-padding-h:8px;--KanbanRecord-gap-v:5px;--KanbanRecord--small-width:300px;--KanbanRecord---image-width:64px;--KanbanRecord---image--fill-width:95px;--KanbanRecord---dropdown-gap:1px;--KanbanColumn---highlight-background:#e6f2f3;--KanbanColumn---highlight-border:#017e84;--o-view-nocontent-zindex:1;--Ribbon-font-size:0.8125rem;border-top:1px solid var(--Kanban-background);background:var(--Kanban-background);padding:var(--Kanban-padding);gap:var(--Kanban-gap)}
+html[data-theme="light"] .o_kanban{background:#F9FAFB;border-top-color:#F9FAFB}
+html[data-theme="light"] .o_kanban_col{background:#F9FAFB;flex:0 0 calc(320px + 2 * 16px);max-width:calc(320px + 2 * 16px);padding:0 16px 16px}
+html[data-theme="light"] .o_kanban_col__head{padding:8px 0}
+html[data-theme="light"] .o_kanban_col__body{gap:8px}
+html[data-theme="light"] .o_kanban_renderer .o_kanban_record > div:not(.o_dropdown_kanban), html[data-theme="light"] .o_kanban_renderer .o_kanban_quick_create{padding:8px 8px}
+html[data-theme="light"] .o_kanban_renderer .o_kanban_record .o_kanban_record_top, html[data-theme="light"] .o_kanban_renderer .o_kanban_record .o_kanban_record_body{margin-bottom:5px}
+html[data-theme="light"] .o_kanban_renderer .o_kanban_record .o_kanban_record_title{color:#111827;font-size:0.9625rem;font-weight:500;margin-bottom:0;margin-top:0;line-height:1.2;overflow-wrap:break-word;word-wrap:break-word}
+html[data-theme="light"] .o_kanban_renderer .o_kanban_record .o_kanban_record_subtitle{display:block;margin-top:2.5px;font-size:0.8125rem;color:#5f636f}
+html[data-theme="light"] .o_kanban_renderer .o_kanban_record .o_kanban_record_bottom .oe_kanban_bottom_left, html[data-theme="light"] .o_kanban_renderer .o_kanban_record .o_kanban_record_bottom .oe_kanban_bottom_right{display:flex;align-items:center;min-height:20px;gap:4px}
+html[data-theme="light"] .o_kanban_renderer .o_kanban_record .o_kanban_record_bottom .oe_kanban_bottom_left{flex:1 1 auto}
+html[data-theme="light"] .o_kanban_renderer .o_kanban_record .o_kanban_record_bottom .oe_kanban_bottom_left > *{margin-right:6px;line-height:1}
+html[data-theme="light"] .o_kanban_renderer .o_kanban_record .o_kanban_record_bottom .oe_kanban_bottom_left .o_priority_star{margin-top:1px;font-size:18px}
+html[data-theme="light"] .o_kanban_renderer .o_kanban_record .o_kanban_record_bottom .o_link_muted{color:#374151}
+html[data-theme="light"] .o_kanban_renderer .o_kanban_record .o_kanban_record_bottom .o_link_muted:hover{color:#714B67;text-decoration:underline}
+html[data-theme="light"] .o_kanban_renderer .oe_kanban_card .o_dropdown_kanban, html[data-theme="light"] .o_kanban_renderer .o_kanban_record .o_dropdown_kanban{visibility:hidden}
+html[data-theme="light"] .o_kanban_renderer .oe_kanban_card .o_dropdown_kanban .dropdown-toggle, html[data-theme="light"] .o_kanban_renderer .o_kanban_record .o_dropdown_kanban .dropdown-toggle{margin:1px 1px 0 0;padding:4px 8px;vertical-align:top;color:#374151}
+html[data-theme="light"] .o_kanban_renderer .oe_kanban_card:hover .o_dropdown_kanban, html[data-theme="light"] .o_kanban_renderer .o_kanban_record:hover .o_dropdown_kanban{visibility:visible}
+html[data-theme="light"] .o_kanban_col{background:#F9FAFB}
+html[data-theme="light"] .o_kanban_col__title{color:#111827}
+html[data-theme="light"] .o_kanban_col__count{background:#e7e9ed;color:#5f636f}
+html[data-theme="light"] .o_kanban_col__sum{color:#5f636f}
+html[data-theme="light"] .o_kanban_col__quick{color:#5f636f}
+html[data-theme="light"] .o_kanban_col__quick:hover{background:#e7e9ed;color:#111827}
+html[data-theme="light"] .o_kanban_col__empty{color:#9a9ca5;border-color:#d8dadd}
+html[data-theme="light"] .o_kanban_col__body.drag-over{background:#e6f2f3;outline:1px solid #017e84;box-shadow:inset 2px 0 0 #017e84,inset -2px 0 0 #017e84}
+html[data-theme="light"] .kanban-card,
+html[data-theme="light"] .oe_kanban_card,
+html[data-theme="light"] .o_kanban_record > div{background:#FFFFFF;border-color:#d8dadd;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+html[data-theme="light"] .kanban-card:hover,
+html[data-theme="light"] .oe_kanban_card:hover{border-color:#9a9ca5;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+html[data-theme="light"] .o_kanban_record_title,
+html[data-theme="light"] .kanban-card__title{color:#111827}
+html[data-theme="light"] .o_kanban_record_title a{color:#111827}
+html[data-theme="light"] .o_kanban_record_title a:hover,
+html[data-theme="light"] .kanban-card__title:hover{color:#017e84}
+html[data-theme="light"] .o_kanban_record_subtitle,
+html[data-theme="light"] .kanban-card__line,
+html[data-theme="light"] .o_text_overflow{color:#5f636f}
+html[data-theme="light"] .kanban-card__money{color:#1F2937}
+html[data-theme="light"] .kanban-card__footer{border-top-color:#d8dadd}
+html[data-theme="light"] .kanban-card__stars--empty{color:#d8dadd}
+html[data-theme="light"] .kanban-quick{background:#FFFFFF;border-color:#d8dadd}
+html[data-theme="light"] .o_kanban_renderer .o_kanban_record > div:not(.o_dropdown_kanban),
+html[data-theme="light"] .o_kanban_renderer .o_kanban_quick_create{border-color:#d8dadd;background:#FFFFFF}
+
+/* ─── Кнопки, ссылки, поля — 1в1 как в Odoo light (chunk 10-11) ─── */
+html[data-theme="light"] .btn{display:inline-block;font-weight:500;line-height:1.5;color:#374151;text-align:center;vertical-align:middle;cursor:pointer;user-select:none;background-color:transparent;border:1px solid transparent;padding:0.3125rem 0.625rem;font-size:0.875rem;border-radius:0.25rem;transition:none}
+html[data-theme="light"] .btn--primary{background:#714B67;border-color:#714B67;color:#FFFFFF}
+html[data-theme="light"] .btn--primary:hover{background:#5b3557;border-color:#60385c}
+html[data-theme="light"] .btn--secondary{background:#FFFFFF;border-color:#d8dadd;color:#374151}
+html[data-theme="light"] .btn--secondary:hover{background:#e7e9ed}
+html[data-theme="light"] .btn--danger{border-color:#d44c59;color:#d44c59}
+html[data-theme="light"] .btn--danger:hover{background:#d44c59;color:#FFFFFF}
+html[data-theme="light"] .link{color:#017e84}
+html[data-theme="light"] .link:hover{color:#01585c}
+html[data-theme="light"] .input{background:transparent;border-color:#e7e9ed;color:#374151;--o-input-border-color:#e7e9ed;--o-caret-color:#374151}
+html[data-theme="light"] .input:focus{border-color:#017e84;--o-input-border-color:#017e84;--o-caret-color:#017e84}
+html[data-theme="light"] .input::placeholder{color:#9a9ca5}
+html[data-theme="light"] select.input{background-color:#FFFFFF;border-color:#e7e9ed}
+html[data-theme="light"] select.input option{background:#FFFFFF;color:#374151}
+html[data-theme="light"] .form__title-input{border-bottom-color:#d8dadd}
+html[data-theme="light"] .o_label,
+html[data-theme="light"] .o_form_label{color:#111827}
+html[data-theme="light"] .o_label--required{color:#1F2937}
+html[data-theme="light"] .o_field{color:#374151}
+
+/* ─── Простыня — 1в1 как в Odoo light ─── */
+html[data-theme="light"] .o_form_view{--formView-sheetBg-padding-x:16px;--formView-sheet-padding-y:16px;--formView-sheet-padding-x:16px}
+html[data-theme="light"] .o_form_view .o_form_sheet_bg{--formView-sheetBg-padding-x:16px;padding-top:8px;padding-left:var(--formView-sheetBg-padding-x);padding-right:var(--formView-sheetBg-padding-x);width:100%;max-width:1534px;margin-right:auto;background:transparent}
+html[data-theme="light"] .o_form_view .o_form_sheet{--formView-sheet-padding-y:16px;--formView-sheet-padding-x:16px;margin:0 var(--formView-sheet-margin-x, calc(var(--formView-sheetBg-padding-x) * -1));padding:var(--formView-sheet-padding-y) var(--formView-sheet-padding-x);border-style:solid;border-color:#d8dadd;border-width:1px 0 1px 0;border-radius:0;background-color:#FFFFFF;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+html[data-theme="light"] .o_form_view .o_form_sheet_bg{background:transparent}
+html[data-theme="light"] .o_form_sheet{background:#FFFFFF;border-color:#d8dadd;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+@media (min-width:768px){html[data-theme="light"] .o_form_view .o_form_sheet{--formView-sheet-padding-y:16px;--formView-sheet-margin-x:0;--formView-sheet-border-width:1px;--formView-sheet-border-radius:0.25rem;margin:0;border-width:1px;border-radius:0.25rem;padding:16px 16px}}
+@media (min-width:992px){html[data-theme="light"] .o_form_view .o_form_sheet{--formView-sheet-padding-y:24px;--formView-sheet-padding-x:24px;padding:24px 24px}}
+html[data-theme="light"] .o_form_view .o_form_label{font-size:0.875rem;line-height:1.5;font-weight:500}
+html[data-theme="light"] .o_form_view .o_inner_group{--columns:1;gap:8px 16px;margin-bottom:8px}
+@media (min-width:576px){html[data-theme="light"] .o_form_view .o_inner_group{grid-template-columns:fit-content(150px) minmax(0, 1fr)}}
+html[data-theme="light"] .o_form_view .o_field_widget{margin-bottom:5px;width:100%}
+html[data-theme="light"] .o_form_view .oe_title{color:#111827}
+@media (min-width:576px){html[data-theme="light"] .o_form_view .oe_title{max-width:75%}}
+html[data-theme="light"] .o_form_view .oe_title > h1, html[data-theme="light"] .o_form_view .oe_title > .h1{min-height:55px;line-height:1.2}
+html[data-theme="light"] .o_form_view .o_group{justify-content:space-between}
+html[data-theme="light"] .o_form_view .o_group .o_form_label{font-weight:400;margin-bottom:5px}
+html[data-theme="light"] .o_form_view .o_group .o_wrap_label .o_form_label{font-weight:500}
+html[data-theme="light"] .o_sheet_title{color:#111827}
+html[data-theme="light"] .o_sheet_section__title{color:#5f636f}
+html[data-theme="light"] .o_statusbar__arrow{background:#e7e9ed;color:#5f636f;border-color:#d8dadd}
+html[data-theme="light"] .o_statusbar__arrow:hover{background:#d8dadd;color:#1F2937}
+html[data-theme="light"] .o_statusbar__arrow.is-done{background:#d8dadd;color:#1F2937}
+html[data-theme="light"] .o_statusbar__arrow.is-current{background:#714B67;color:#FFFFFF;border-color:#714B67}
+html[data-theme="light"] .o_statusbar__arrow.is-current-win{background:#28a745;color:#FFFFFF}
+html[data-theme="light"] .o_statusbar__arrow.is-current-lost{background:#9a9ca5;color:#FFFFFF}
+html[data-theme="light"] .o_lead_chatter{border-left-color:#d8dadd}
+html[data-theme="light"] .o_lead_layout{}
+
+/* ─── Списки — 1в1 как в Odoo light (o_list_renderer) ─── */
+html[data-theme="light"] .o_list_renderer{--ListRenderer-table-padding-x:16px;--ListRenderer-thead-padding-y:0.5rem;--ListRenderer-thead-bg-color:#F9FAFB;--ListRenderer-thead-border-end-color:#d8dadd;--ListRenderer-tfoot-bg-color:transparent;--table-bg:#FFFFFF}
+html[data-theme="light"] .o_list_renderer .o_list_table{--table-bg:#FFFFFF;border-color:#d8dadd;border-collapse:collapse;font-variant-numeric:tabular-nums}
+html[data-theme="light"] .o_list_renderer .o_list_table thead{background-color:var(--ListRenderer-thead-bg-color);position:sticky;top:0;z-index:1}
+html[data-theme="light"] .o_list_renderer .o_list_table thead th{padding-top:var(--ListRenderer-thead-padding-y);padding-bottom:0.5rem;padding-left:16px;padding-right:16px;background-color:transparent;color:#111827;font-weight:500;font-size:0.875rem}
+html[data-theme="light"] .o_list_renderer .o_list_table tbody > tr > td:not(.o_list_record_selector){--fieldWidget-display:block;display:table-cell;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0.3rem 16px}
+html[data-theme="light"] .o_list_renderer .o_list_table tbody > tr > td.o_list_number{text-align:right;direction:ltr}
+html[data-theme="light"] .o_list_renderer .o_list_table tfoot > tr > td{color:#111827;background-color:transparent;font-weight:500;display:table-cell;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:top}
+html[data-theme="light"] .o_list_renderer .o_data_row{border-bottom-width:1px}
+html[data-theme="light"] .o_list_renderer .o_data_row > .o_data_cell{border-bottom-width:0}
+html[data-theme="light"] .o_list_view{background:#FFFFFF;border-color:#d8dadd}
+html[data-theme="light"] .o_list_view .o_list_renderer{--ListRenderer-thead-padding-y:0.5rem;--ListRenderer-table-padding-x:16px}
+html[data-theme="light"] .o_list_view th{color:#111827;border-bottom-color:#d8dadd;background:#F9FAFB;font-weight:500;font-size:0.875rem;padding:0.5rem 16px;white-space:nowrap}
+html[data-theme="light"] .o_list_view td{border-bottom-color:#e7e9ed;color:#374151;padding:0.3rem 16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.875rem}
+html[data-theme="light"] .o_list_view tbody tr:hover td{background:#F9FAFB}
+html[data-theme="light"] .o_list_view__footer{color:#5f636f;background:#FFFFFF;border-top-color:#d8dadd;padding:6px 16px}
+html[data-theme="light"] .stage-badge{background:#e7e9ed;color:#5f636f}
+html[data-theme="light"] .stage-badge.stage-lead{background:#dbeafe;color:#1e40af}
+html[data-theme="light"] .stage-badge.stage-no-answer{background:#fef3c7;color:#92400e}
+html[data-theme="light"] .stage-badge.stage-gatekeeper{background:#ffedd5;color:#9a3412}
+html[data-theme="light"] .stage-badge.stage-lpr{background:#e0e7ff;color:#3730a3}
+html[data-theme="light"] .stage-badge.stage-potential{background:#dcfce7;color:#166534}
+html[data-theme="light"] .stage-badge.stage-gone{background:#f3f4f6;color:#4b5563}
+html[data-theme="light"] .o_kanban_col__progress{background:#d8dadd}
+html[data-theme="light"] .o_kanban_col__progress>span{background:#714B67}
+html[data-theme="light"] .o_list_renderer{--ListRenderer-thead-bg-color:#F9FAFB;--ListRenderer-thead-border-end-color:#d8dadd}
+html[data-theme="light"] .o_list_renderer .o_list_table{--table-bg:#FFFFFF;border-color:#d8dadd}
+html[data-theme="light"] .o_list_renderer .o_list_table thead{background:#F9FAFB}
+html[data-theme="light"] .o_list_renderer .o_list_table thead th{color:#111827}
+html[data-theme="light"] .table{--table-bg:#FFFFFF;border-color:#d8dadd;color:#374151}
+html[data-theme="light"] .table > thead{border-color:#d8dadd}
+html[data-theme="light"] .table > tbody{border-color:#e7e9ed}
+
+/* ─── Лента общения ─── */
+html[data-theme="light"] .o_chatter__btn{color:#374151}
+html[data-theme="light"] .o_chatter__btn:hover{background:#F9FAFB}
+html[data-theme="light"] .o_chatter__btn--active{color:#111827}
+html[data-theme="light"] .o_chatter__btn:disabled{color:#9a9ca5}
+html[data-theme="light"] .o_chatter__day{color:#5f636f}
+html[data-theme="light"] .o_chatter__day::before,
+html[data-theme="light"] .o_chatter__day::after{border-top-color:#d8dadd}
+html[data-theme="light"] .o_chatter_msg{border-bottom-color:#e7e9ed}
+html[data-theme="light"] .o_chatter_msg__author{color:#111827}
+html[data-theme="light"] .o_chatter_msg__meta{color:#5f636f}
+html[data-theme="light"] .o_chatter_msg__text{color:#374151}
+html[data-theme="light"] .o_chatter_msg--system .o_chatter_msg__text{color:#5f636f}
+html[data-theme="light"] .o_chatter_msg__del button{color:#9a9ca5}
+html[data-theme="light"] .o_chatter_msg__del button:hover{color:#d44c59}
+html[data-theme="light"] .o_avatar--gray{background:#e7e9ed;color:#5f636f}
+
+/* ─── Дашборд, вход, уведомления ─── */
+html[data-theme="light"] .o_stat{background:#FFFFFF;border-color:#d8dadd}
+html[data-theme="light"] .o_stat__label{color:#5f636f}
+html[data-theme="light"] .o_stat__value{color:#111827}
+html[data-theme="light"] .o_panel{background:#FFFFFF;border-color:#d8dadd}
+html[data-theme="light"] .o_panel__head h2{color:#111827}
+html[data-theme="light"] .o_login_wrap{background:#F9FAFB}
+html[data-theme="light"] .o_login_card{background:#FFFFFF;border-color:#d8dadd;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+html[data-theme="light"] .o_login_card h1{color:#111827}
+html[data-theme="light"] .o_toast{background:#FFFFFF;border-color:#d8dadd;box-shadow:0 8px 24px rgba(0,0,0,.12);color:#374151}
+html[data-theme="light"] .o_toast--success{border-left-color:#28a745}
+html[data-theme="light"] .o_toast--danger{border-left-color:#d44c59}
+html[data-theme="light"] .o_toast--warning{border-left-color:#e99d00}
+html[data-theme="light"] .stage-badge.req-draft{background:#e7e9ed;color:#5f636f}
+html[data-theme="light"] .stage-badge.req-new{background:#dbeafe;color:#1e40af}
+html[data-theme="light"] .stage-badge.req-carrier{background:#fef3c7;color:#92400e}
+html[data-theme="light"] .stage-badge.req-invoiced{background:#f3e8ef;color:#714B67}
+html[data-theme="light"] .stage-badge.req-paid{background:#dcfce7;color:#166534}
+html[data-theme="light"] .stage-badge.req-cancelled{background:#f3f4f6;color:#9a9ca5;text-decoration:line-through}
+html[data-theme="light"] .o_list_num{text-align:right;white-space:nowrap}
+html[data-theme="light"] .o_pager{color:#5f636f}
+html[data-theme="light"] .o_pager__btn{border-color:#d8dadd;color:#111827;background:#FFFFFF}
+html[data-theme="light"] .o_field_badge{background:#e7e9ed;color:#1F2937}
+html[data-theme="light"] .o_tag{background:#e7e9ed;color:#374151;border-color:#d8dadd}
+html[data-theme="light"] .o_web_client{background:#F9FAFB;color-scheme:light}
+html[data-theme="light"] .card{background:#FFFFFF;border-color:#d8dadd}
+html[data-theme="light"] .card-body{padding:16px 16px}
+html[data-theme="light"] .card-header{background:#FFFFFF;border-bottom-color:#d8dadd}
+html[data-theme="light"] .modal-content{background:#FFFFFF;border-color:#d8dadd}
+html[data-theme="light"] .modal-header{border-bottom-color:#d8dadd}
+html[data-theme="light"] .modal-footer{border-top-color:#d8dadd}
+html[data-theme="light"] .form-control{color:#374151;background:transparent;border-color:#d8dadd}
+html[data-theme="light"] .form-control:focus{border-color:#017e84;box-shadow:none}
+html[data-theme="light"] .form-control::placeholder{color:#9a9ca5}
+html[data-theme="light"] .form-select{color:#374151;background-color:#FFFFFF;border-color:#d8dadd}
+html[data-theme="light"] .input-group-text{background:#e7e9ed;border-color:#e7e9ed;color:#374151}
+html[data-theme="light"] .o_form_view .o_form_sheet{--formView-sheet-border-color:#d8dadd}
+html[data-theme="light"] .o_form_view .o_form_label{color:#111827}
+
+/* ─── Новые колонки заявок 1в1 Odoo — светлая тема ─── */
+html[data-theme="light"] .o_list_check{width:40px;text-align:center}
+html[data-theme="light"] .o_list_company{max-width:180px}
+html[data-theme="light"] .o_list_client{max-width:200px}
+html[data-theme="light"] .o_list_date{white-space:nowrap;color:#374151}
+html[data-theme="light"] .o_list_margin{text-align:right;font-variant-numeric:tabular-nums}
+html[data-theme="light"] .o_list_total{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+html[data-theme="light"] .o_seller{display:inline-flex;align-items:center;gap:6px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html[data-theme="light"] .o_upsell_btn{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:#374151;cursor:pointer;font-family:inherit;font-size:0.8125rem;padding:2px 8px;border-radius:0.25rem;white-space:nowrap}
+html[data-theme="light"] .o_upsell_btn:hover{background:#F9FAFB;color:#111827}
+html[data-theme="light"] .o_upsell_btn .o_upsell_icon{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;color:#d44c59;flex-shrink:0}
+html[data-theme="light"] .o_upsell_btn .o_upsell_icon svg{width:14px;height:14px;fill:currentColor}
+html[data-theme="light"] .o_clock_icon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;color:#5f636f;opacity:.7}
+html[data-theme="light"] .o_clock_icon svg{width:16px;height:16px}
+html[data-theme="light"] .o_list_wrap{padding:0 16px 16px;overflow-x:auto}
+html[data-theme="light"] .o_list_renderer .o_list_table{min-width:1180px}

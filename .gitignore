@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Flask / SQLite (локальная разработка)
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# Alembic cache
+app/migrations/__pycache__/
+
+# Node / SCSS (если поставишь компилятор)
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker / SSL
+nginx/ssl/*.pem
+nginx/ssl/*.key
+!nginx/ssl/.gitkeep
+
+# Логи
+*.log
+logs/

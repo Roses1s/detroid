@@ -1,0 +1,216 @@
+// ─── Верхняя панель: тёмная, 1в1 как в Odoo (o_main_navbar) ─────
+// Из light CSS chunk 46: .o_control_panel { border-bottom:1px solid #d8dadd; bg white }
+// Из Odoo скриншота: между navbar и control_panel нет разделительной полосы, один цвет как control_panel
+// Поэтому navbar: bg как control_panel (#262A36 в dark, white в light), border-bottom 0
+.o_navbar,
+.o_main_navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: $navbar-height;
+  background: $bg-sheet; // как o_control_panel, а не #111827 — нет полосы
+  border-bottom: none; // убрать разделительную полосу как в Odoo
+  display: flex;
+  align-items: center;
+  padding: 8px 16px; // Odoo navbar padding
+  gap: 0;
+  z-index: 100;
+  font-family: $font-family;
+  font-size: $font-size-base;
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    text-decoration: none;
+    border-right: 1px solid $border;
+    height: calc(#{$navbar-height} - 20px);
+  }
+
+  &__app-icon {
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, $primary 0%, $primary-hover 100%);
+    color: #fff;
+    font-weight: 800;
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    object-fit: contain; // для <img> — иконка из файла
+    flex-shrink: 0;
+  }
+  // Если иконка — картинка (img), убираем букву — теперь иконка с фиолетовым квадратом #714B67 и белой пантерой
+  img#{&}__app-icon {
+    background: transparent;
+    box-shadow: none;
+    font-size: 0;
+    filter: none; // фиолетовый квадрат уже с белым логотипом, виден и на тёмном и на светлом
+  }
+
+  &__app-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: $text-main;
+    white-space: nowrap;
+    font-family: $font-family-heading;
+  }
+
+  &__menu {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    overflow-x: auto;
+    scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+  }
+
+  &__link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: auto;
+    height: calc(#{$navbar-height} - 20px);
+    margin: 0 1px;
+    padding: 0 0.63em;
+    line-height: calc(#{$navbar-height} - 20px);
+    border-radius: 0.25rem;
+    user-select: none;
+    background: transparent;
+    color: #E4E4E4;
+    text-decoration: none;
+    font-size: 1em;
+    white-space: nowrap;
+
+    &:hover, &:focus, &.focus {
+      background: $bg-hover;
+      color: #E4E4E4;
+    }
+    &--active {
+      font-weight: 500;
+      color: #fff;
+      background: $bg-hover;
+    }
+  }
+
+  &__systray {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    border-left: 1px solid $border;
+    gap: 1px;
+  }
+
+  &__user { position: relative; }
+
+  &__user-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: calc(#{$navbar-height} - 20px);
+    padding: 0 0.63em;
+    margin: 0 1px;
+    background: transparent;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-family: $font-family;
+    font-size: 1em;
+    color: #E4E4E4;
+
+    &:hover { background: $bg-hover; color: #E4E4E4; }
+  }
+
+  &__user-menu {
+    display: none;
+    position: absolute;
+    top: 100%; right: 0;
+    min-width: 200px;
+    background: $bg-sheet;
+    border: 1px solid $border;
+    border-radius: 0.25rem;
+    box-shadow: $shadow-pop;
+    padding: 4px;
+    z-index: 200;
+  }
+
+  &__user.open &__user-menu { display: block; }
+
+  &__user-item {
+    display: block;
+    padding: 7px 10px;
+    border-radius: $radius;
+    color: $text-main;
+    text-decoration: none;
+    font-size: $font-size-base;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: $font-family;
+    cursor: pointer;
+
+    &:hover { background: $bg-hover; }
+  }
+
+  &__user-mail {
+    padding: 7px 10px;
+    font-size: $font-size-sm;
+    color: $text-muted;
+    border-bottom: 1px solid $border;
+    margin-bottom: 4px;
+  }
+}
+
+// Переключатель темы в меню пользователя — 1в1 как в Odoo, не всегда зелёный
+.o_theme_row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover { background: $bg-hover; }
+}
+
+.o_switch {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: $bg-hover; // серый выкл по умолчанию (светлая тема = выкл)
+  flex-shrink: 0;
+  transition: background 0.18s ease;
+
+  &__knob {
+    position: absolute;
+    top: 2px;
+    left: 2px; // выкл — слева
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    transition: left 0.18s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+}
+
+// Вкл — тёмный режим активен: зелёный и кружок справа
+.o_theme_row[aria-checked="true"] .o_switch {
+  background: #34c759;
+}
+.o_theme_row[aria-checked="true"] .o_switch__knob {
+  left: 16px;
+}
+.o_theme_row[aria-checked="false"] .o_switch {
+  background: $bg-hover;
+}
+.o_theme_row[aria-checked="false"] .o_switch__knob {
+  left: 2px;
+}

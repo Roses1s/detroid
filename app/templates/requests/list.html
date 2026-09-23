@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}Заявки — {{ app_name }}{% endblock %}
+
+{% block control_panel %}
+<div class="o_control_panel">
+  <div class="o_cp_left o_cp_left--row">
+    <div class="o_cp_buttons">
+      <a class="btn btn--primary" href="{{ url_for('requests.create') }}">Создать</a>
+      <button type="button" class="btn btn--danger" id="bulk-delete-btn" hidden>
+        Удалить выбранные (<span id="bulk-delete-count">0</span>)
+      </button>
+    </div>
+    <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Заявки</span></h1>
+  </div>
+  <div class="o_cp_center">
+    {% set search_action = url_for('requests.index') %}
+    {% set search_endpoint = 'requests.index' %}
+    {% include "components/search_requests.html" %}
+  </div>
+  <div class="o_cp_right">
+    {# Пейджер как в Odoo: 1-80/104 — tabular nums #}
+    <span class="o_pager">
+      {% if page > 1 %}
+        <a class="o_pager__btn" href="{{ url_for('requests.index', q=search_q, status=active_status, page=page-1) }}" title="Назад">‹</a>
+      {% else %}
+        <span class="o_pager__btn o_pager__btn--disabled">‹</span>
+      {% endif %}
+      <span class="o_pager__text">
+        {%- if total -%}
+          {{ (page - 1) * per_page + 1 }}-{{ (page - 1) * per_page + requests | length }}/{{ total }}
+        {%- else -%}0/0{%- endif -%}
+      </span>
+      {% if page < pages %}
+        <a class="o_pager__btn" href="{{ url_for('requests.index', q=search_q, status=active_status, page=page+1) }}" title="Вперёд">›</a>
+      {% else %}
+        <span class="o_pager__btn o_pager__btn--disabled">›</span>
+      {% endif %}
+    </span>
+    <span class="o_view_switcher">
+      <a class="o_view_switcher__btn" title="Канбан"
+         href="{{ url_for('requests.kanban', q=search_q, status=active_status) }}">
+        <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+      </a>
+      <span class="o_view_switcher__btn o_view_switcher__btn--active" title="Список">
+        <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="2" width="14" height="2" rx="1"/><rect x="1" y="7" width="14" height="2" rx="1"/><rect x="1" y="12" width="14" height="2" rx="1"/></svg>
+      </span>
+    </span>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="o_list_wrap">
+  <div class="o_list_view">
+    <div class="o_list_renderer">
+      <table class="o_list_table">
+        <thead>
+          <tr>
+            <th class="o_list_record_selector o_list_check"><input type="checkbox" id="check-all" title="Выбрать все"></th>
+            <th>Номер</th>
+            <th>Дата создания</th>
+            <th>Компания</th>
+            <th>Продавец</th>
+            <th>Клиент</th>
+            <th>Статус</th>
+            <th class="o_list_number_th">Маржа</th>
+            <th>Действия</th>
+            <th class="o_list_number_th">Всего</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for req in requests %}
+          <tr class="o_data_row">
+            <td class="o_list_record_selector o_list_check o_data_cell"><input type="checkbox" class="row-check" value="{{ req.id }}"></td>
+            <td class="o_data_cell"><a href="{{ url_for('requests.detail', request_id=req.id) }}"><strong>{{ req.number or ("#%d" % req.id) }}</strong></a></td>
+            <td class="o_data_cell o_list_date">{{ req.created_at.strftime("%d.%m.%Y") if req.created_at else "" }}</td>
+            <td class="o_data_cell o_list_company" title="{{ req.company.name if req.company else '' }}">
+              {%- if req.company %}{{ req.company.name }}
+              {%- elif req.lead and req.lead.company %}{{ req.lead.company.name }}
+              {%- else %}<span class="muted">—</span>{% endif -%}
+            </td>
+            <td class="o_data_cell">
+              {% if req.manager %}
+                <span class="o_seller" title="{{ req.manager.display_name }}">
+                  <span class="o_avatar o_avatar--sm o_avatar_c{{ req.manager.display_name | avatar_color }}">{{ req.manager.display_name[:1] | upper }}</span>
+                  {{ req.manager.display_name }}
+                </span>
+              {% else %}<span class="muted">—</span>{% endif %}
+            </td>
+            <td class="o_data_cell o_list_client" title="{% if req.contact %}{{ req.contact.full_name }}{% elif req.lead %}{{ req.lead.title }}{% endif %}">
+              {%- if req.contact %}{{ req.contact.full_name }}
+              {%- elif req.lead %}{{ req.lead.title }}
+              {%- else %}<span class="muted">—</span>{% endif -%}
+            </td>
+            <td class="o_data_cell"><span class="stage-badge {{ req.status.css_class }}">{{ req.status.title }}</span></td>
+            <td class="o_data_cell o_list_number o_list_margin">{{ req.margin | money }}</td>
+            <td class="o_data_cell">
+              {% if req.status.value == 'carrier_found' and req.next_status %}
+                <form method="post" action="{{ url_for('requests.advance', request_id=req.id) }}" style="display:inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="next" value="{{ request.full_path }}">
+                  <button type="submit" class="o_upsell_btn" title="Перевести в «{{ req.next_status.title }}»">
+                    <span class="o_upsell_icon">
+                      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>
+                    </span>
+                    Заказать Upsell
+                  </button>
+                </form>
+              {% elif req.next_status %}
+                <form method="post" action="{{ url_for('requests.advance', request_id=req.id) }}" style="display:inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="next" value="{{ request.full_path }}">
+                  <button type="submit" class="o_upsell_btn" title="Перевести в «{{ req.next_status.title }}»">
+                    <span class="o_upsell_icon">
+                      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>
+                    </span>
+                    Заказать
+                  </button>
+                </form>
+              {% elif req.status.value == 'cancelled' %}
+                <span class="muted">—</span>
+              {% else %}
+                <span class="o_clock_icon" title="Нет запланированных действий">
+                  <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 3.5a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-.128.334L5.88 10.88a.5.5 0 1 1-.708-.708L7.5 7.5V4a.5.5 0 0 1 .5-.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm0-1A7 7 0 1 1 8 1a7 7 0 0 1 0 14z"/></svg>
+                </span>
+              {% endif %}
+            </td>
+            <td class="o_data_cell o_list_number o_list_total"><strong>{{ req.client_price | money }}</strong></td>
+          </tr>
+          {% else %}
+          <tr class="o_data_row"><td colspan="10" class="o_data_cell muted">Ничего не найдено. Измените фильтры или создайте заявку.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="o_list_view__footer">
+      Всего заявок: {{ total }} · страница {{ page }} из {{ pages }}
+      · Итого: {{ grand_total | money }} · Маржа: {{ grand_margin | money }}
+    </div>
+  </div>
+</div>
+
+{# Скрытая форма массового удаления: JS добавляет по одному полю ids на каждую галочку #}
+<form id="bulk-delete-form" method="post" action="{{ url_for('requests.bulk_delete') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="next" value="{{ request.full_path }}">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/search.js') }}?v=2"></script>
+<script>
+(function () {
+  "use strict";
+  var checkAll = document.getElementById("check-all");
+  var checks = Array.prototype.slice.call(document.querySelectorAll(".row-check"));
+  var btn = document.getElementById("bulk-delete-btn");
+  var count = document.getElementById("bulk-delete-count");
+  var form = document.getElementById("bulk-delete-form");
+  if (!btn) return;
+
+  function refresh() {
+    var selected = checks.filter(function (c) { return c.checked; });
+    btn.hidden = selected.length === 0;
+    count.textContent = selected.length;
+    if (checkAll) {
+      checkAll.checked = selected.length > 0 && selected.length === checks.length;
+    }
+  }
+  checks.forEach(function (c) { c.addEventListener("change", refresh); });
+  if (checkAll) {
+    checkAll.addEventListener("change", function () {
+      checks.forEach(function (c) { c.checked = checkAll.checked; });
+      refresh();
+    });
+  }
+  btn.addEventListener("click", function () {
+    var ids = checks.filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
+    if (!ids.length) return;
+    if (!confirm("Удалить выбранные заявки (" + ids.length + " шт.) безвозвратно?")) return;
+    form.querySelectorAll('input[name="ids"]').forEach(function (el) { el.remove(); });
+    ids.forEach(function (id) {
+      var input = document.createElement("input");
+      input.type = "hidden";
+      input.name = "ids";
+      input.value = id;
+      form.appendChild(input);
+    });
+    form.submit();
+  });
+})();
+</script>
+{% endblock %}

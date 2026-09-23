@@ -1,0 +1,457 @@
+// ─── Списки: тёмные — 1в1 как в Odoo (o_list_renderer) ─────
+// Из web.assets_web.min.css chunk 82-84:
+// .o_list_renderer { --ListRenderer-table-padding-x:0.3rem; --ListRenderer-thead-padding-y:24px; --ListRenderer-thead-bg-color:#F9FAFB }
+// .o_list_view .o_list_renderer { --thead-padding-y:0.5rem; --table-padding-x:16px }
+// thead th { padding-top:0.5rem; bg transparent; color #111827; weight 500 }
+// tbody td { display:table-cell; overflow hidden; text-overflow ellipsis; white-space nowrap }
+
+.o_list_wrap {
+  padding: 0 16px 16px;
+  overflow-x: auto;
+}
+
+// Odoo list renderer variables — 1в1 тёмная тема
+.o_list_renderer {
+  --ListRenderer-table-padding-x: 16px;
+  --ListRenderer-thead-padding-y: 0.5rem;
+  --ListRenderer-thead-bg-color: #262A36;
+  --ListRenderer-thead-border-end-color: #3C3E4B;
+  --ListRenderer-tfoot-bg-color: transparent;
+  --ListRenderer-margin-x: unset;
+  --table-bg: #262A36;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+
+  .o_list_table {
+    --table-bg: #262A36;
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 1180px; // как в Odoo — горизонтальный скролл если не влезает
+    font-size: 0.875rem;
+    table-layout: auto;
+
+    > thead > tr > :first-child,
+    > tbody > tr > :first-child,
+    > tfoot > tr > :first-child { padding-left: var(--ListRenderer-table-padding-x); }
+    > thead > tr > :last-child,
+    > tbody > tr > :last-child,
+    > tfoot > tr > :last-child { padding-right: var(--ListRenderer-table-padding-x); }
+
+    thead {
+      background-color: var(--ListRenderer-thead-bg-color);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      th {
+        padding-top: var(--ListRenderer-thead-padding-y);
+        padding-bottom: 0.5rem;
+        background-color: transparent;
+        color: #E4E4E4;
+        font-weight: 500;
+        font-size: 0.875rem;
+        border-bottom: 1px solid #3C3E4B;
+        white-space: nowrap;
+      }
+      .o_list_number_th { text-align: right; }
+    }
+
+    tbody > tr > td:not(.o_list_record_selector):not(.o_handle_cell):not(.o_list_button) {
+      --fieldWidget-display: block;
+      display: table-cell;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 220px;
+    }
+    tbody > tr > td.o_list_number { text-align: right; direction: ltr; }
+    tbody > tr > td.o_list_text { white-space: pre-wrap; word-wrap: break-word; }
+
+    tfoot > tr > td {
+      color: #E4E4E4;
+      background-color: transparent;
+      font-weight: 500;
+      display: table-cell;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      vertical-align: top;
+    }
+    .o_list_number { text-align: right; direction: ltr; font-variant-numeric: tabular-nums; }
+    .o_column_sortable:not(.o_handle_cell) { user-select: none; }
+    .o_list_record_selector { width: 40px; vertical-align: middle; text-align: center; }
+    .o_list_record_remove, .o_handle_cell, .o_list_record_open_form_view { width: 1px; }
+  }
+
+  .o_data_row { border-bottom-width: 1px; }
+  .o_data_row > .o_data_cell { border-bottom-width: 0; }
+  .o_data_row.o_data_row_selected > .o_data_cell { border-bottom-width: 1px; }
+}
+
+.o_list_view {
+  background: $bg-sheet;
+  border: 1px solid $border;
+  border-top: none;
+  overflow-x: auto;
+
+  .o_list_renderer {
+    --ListRenderer-thead-padding-y: 0.5rem;
+    --ListRenderer-table-padding-x: 16px;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+
+  th {
+    color: $text-heading;
+    font-weight: 500;
+    font-size: 0.875rem;
+    text-align: left;
+    padding: 0.5rem 16px;
+    border-bottom: 1px solid $border;
+    white-space: nowrap;
+    background-color: var(--ListRenderer-thead-bg-color, $bg-sheet);
+  }
+
+  td {
+    padding: 0.3rem 16px;
+    border-bottom: 1px solid $border;
+    color: $text-main;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    vertical-align: middle;
+  }
+
+  tbody tr {
+    &:hover td { background: $bg-hover; }
+    &:last-child td { border-bottom: none; }
+    &.o_data_row_selected td { background: $bg-hover; }
+  }
+
+  &__footer {
+    padding: 6px 16px;
+    color: $text-muted;
+    font-size: 12px;
+    background: $bg-sheet;
+    border-top: 1px solid $border;
+  }
+}
+
+// ─── Odoo list колонки как на скриншоте image-1.png ──────
+.o_list_check { width: 40px; text-align: center; }
+.o_list_num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.o_list_date { white-space: nowrap; color: $text-main; }
+.o_list_company { max-width: 180px; }
+.o_list_client { max-width: 200px; }
+.o_list_margin { text-align: right; font-variant-numeric: tabular-nums; }
+.o_list_total { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.o_seller {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// ─── Действия: Заказать Upsell (красная иконка) + часы ─────
+.o_list_action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+
+  &--primary {
+    background: none;
+    border: none;
+    color: $text-main;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: $radius;
+    font-family: $font-family;
+    font-size: 0.8125rem;
+
+    &:hover { background: $bg-hover; color: #fff; }
+  }
+
+  &--muted {
+    color: $text-muted;
+  }
+}
+
+.o_upsell_btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: $text-main;
+  cursor: pointer;
+  font-family: $font-family;
+  font-size: 0.8125rem;
+  padding: 2px 8px;
+  border-radius: $radius;
+  white-space: nowrap;
+
+  &:hover { background: $bg-hover; color: #fff; }
+
+  .o_upsell_icon {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #b83232; // красный как в Odoo screenshot
+    flex-shrink: 0;
+
+    svg { width: 14px; height: 14px; fill: currentColor; }
+  }
+}
+
+.o_clock_icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: $text-muted;
+  opacity: 0.7;
+
+  svg { width: 16px; height: 16px; }
+}
+
+// ─── Цветные теги (светлые пилюли читаются и на тёмном) ──
+.o_tag {
+  display: inline-block;
+  font-size: 11px;
+  padding: 0 6px;
+  border-radius: 8px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.o_tag_color_0 { background: #e9ecef; color: #495057; }
+.o_tag_color_1 { background: #fce4e4; color: #a63a3a; }
+.o_tag_color_2 { background: #fbeedb; color: #9c6b2d; }
+.o_tag_color_3 { background: #fef6d8; color: #8a6d00; }
+.o_tag_color_4 { background: #e8f5e9; color: #2e7d32; }
+.o_tag_color_5 { background: #e0f2f1; color: #00695c; }
+.o_tag_color_6 { background: #e3f2fd; color: #1565c0; }
+.o_tag_color_7 { background: #ede7f6; color: #4527a0; }
+.o_tag_color_8 { background: #fce4ec; color: #ad1457; }
+.o_tag_color_9 { background: #efebe9; color: #4e342e; }
+.o_tag_color_10 { background: #e8eaf6; color: #283593; }
+.o_tag_color_11 { background: #f3e5f5; color: #6a1b9a; }
+
+// ─── Бейджи стадий (тёмные оттенки — как в Odoo dark) ─────
+.stage-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: $bg-chip;
+  color: $text-muted;
+  white-space: nowrap;
+
+  &.stage-lead { background: #1e2a52; color: #6AB5FB; }
+  &.stage-no-answer { background: #3a2f1a; color: #e99d00; }
+  &.stage-gatekeeper { background: #4a2f14; color: #f0a243; }
+  &.stage-lpr { background: #2c2f5a; color: #9aa5ff; }
+  &.stage-potential { background: #1a2e22; color: #1dc959; }
+  &.stage-gone { background: $bg-sheet; color: $text-muted; }
+
+  // Заявки — статусы как в Odoo
+  &.req-draft { background: $bg-chip; color: $text-muted; }
+  &.req-new { background: #1e2a52; color: #6AB5FB; }
+  &.req-carrier { background: #3a2f1a; color: #e99d00; }
+  &.req-invoiced { background: #2a2230; color: #b972a6; }
+  &.req-paid { background: #1a2e22; color: #1dc959; }
+  &.req-cancelled { background: $bg-chip; color: $text-light; text-decoration: line-through; }
+}
+
+// ─── Аватары: 8 цветов по имени ──────────────────────────
+.o_avatar {
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  font-size: 12px;
+  background: $primary;
+  color: #fff;
+
+  &--sm { width: 22px; height: 22px; font-size: 11px; }
+  &--lg { width: 32px; height: 32px; font-size: 14px; }
+  &--gray { background: $bg-hover; color: $text-muted; }
+}
+
+.o_avatar_c0 { background: #26a69a; color: #fff; }
+.o_avatar_c1 { background: #5c6bc0; color: #fff; }
+.o_avatar_c2 { background: #ffa000; color: #fff; }
+.o_avatar_c3 { background: #66bb6a; color: #fff; }
+.o_avatar_c4 { background: #ef5350; color: #fff; }
+.o_avatar_c5 { background: #ab47bc; color: #fff; }
+.o_avatar_c6 { background: #29b6f6; color: #fff; }
+.o_avatar_c7 { background: #8d6e63; color: #fff; }
+
+// ─── Лента общения ───────────────────────────────────────
+.o_chatter {
+  &__buttons { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+
+  &__btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 5px 10px;
+    font-size: 13px;
+    font-family: $font-family;
+    cursor: pointer;
+    color: $text-main;
+
+    &:hover { background: $bg-hover; }
+    &--active { border-bottom-color: $primary; font-weight: 600; color: #fff; }
+    &:disabled { color: $text-light; cursor: default; background: none; }
+  }
+
+  &__form { margin-bottom: 14px; }
+  &__input { margin-bottom: 8px; }
+
+  &__thread { display: flex; flex-direction: column; }
+
+  // Разделитель «7 сентября 2026 г.»
+  &__day {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: $text-muted;
+    font-size: 12px;
+    margin: 14px 0 4px;
+
+    &::before, &::after {
+      content: "";
+      flex: 1;
+      border-top: 1px solid $border;
+    }
+  }
+}
+
+.o_chatter_msg {
+  display: flex;
+  gap: 10px;
+  padding: 10px 4px;
+  border-bottom: 1px solid $border;
+
+  &__body { flex: 1; min-width: 0; }
+
+  &__head {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    flex-wrap: wrap;
+    margin-bottom: 2px;
+  }
+
+  &__author { font-weight: 600; font-size: 13px; color: $text-main; }
+  &__meta { font-size: 12px; color: $text-muted; }
+  &__text { font-size: 13px; word-break: break-word; color: $text-main; }
+
+  &--system &__text { color: $text-muted; }
+
+  &__del {
+    margin-left: auto;
+    button {
+      background: none; border: none; color: $text-light;
+      cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px;
+      &:hover { color: $danger; }
+    }
+  }
+}
+
+// ─── Главная: панели статистики ──────────────────────────
+.o_dashboard { padding: 16px; max-width: 1100px; margin: 0 auto; }
+
+.o_stat_grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+
+  @media (max-width: 800px) { grid-template-columns: repeat(2, 1fr); }
+}
+
+.o_stat {
+  background: $bg-sheet;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 10px 14px;
+
+  &__label { font-size: 12px; color: $text-muted; }
+  &__value { font-size: 20px; font-weight: 600; color: $text-main; }
+}
+
+.o_panel {
+  background: $bg-sheet;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+
+  &__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+
+    h2 { font-size: 14px; margin: 0; color: $text-main; }
+  }
+}
+
+// ─── Вход / регистрация ──────────────────────────────────
+.o_login_wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $bg-content;
+  padding: 24px;
+}
+
+.o_login_card {
+  background: $bg-sheet;
+  border: 1px solid $border;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-pop;
+  padding: 28px 32px;
+  width: 100%;
+  max-width: 380px;
+
+  &__logo { text-align: center; margin-bottom: 18px; }
+  &__icon {
+    width: 52px; height: 52px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, $primary 0%, $primary-hover 100%);
+    color: #fff;
+    font-weight: 800;
+    font-size: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+  h1 { font-size: 19px; margin: 10px 0 0; text-align: center; color: $text-main; }
+  &__sub { text-align: center; margin-bottom: 16px; }
+
+  .o_field_row { margin-bottom: 12px; }
+  &__hint { text-align: center; margin-top: 14px; font-size: 12px; }
+}
+
+// Воронка в отчётах
+.funnel-bar-cell { min-width: 200px; }
+.funnel-bar { height: 14px; background: $primary; border-radius: 7px; min-width: 4px; }
