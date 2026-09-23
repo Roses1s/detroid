@@ -1,4 +1,5 @@
-"""Страницы лидов: канбан, список, карточка, форма, лента общения."""
+"""Страницы лидов: канбан, список, карточка, форма, лента общения — единственный модуль CRM."""
+
 from itertools import groupby
 from urllib.parse import urlencode
 
@@ -8,26 +9,21 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import selectinload
 
 from ..extensions import db
-from ..models import Company, SavedFilter, User
+from ..models import SavedFilter, User
 from ..models.lead import STAGE_ORDER, Lead, LeadMessage, LeadStage, MessageKind
 
 leads_bp = Blueprint("leads", __name__, url_prefix="/leads")
 
 
 def _page_param() -> int:
-    """Номер страницы из ?page=, мусор и отрицательные значения → 1."""
     page = request.args.get("page", "1")
     return int(page) if page.isdigit() and int(page) > 0 else 1
 
 
-# Жадная загрузка связей: без неё каждая карточка дёргает менеджера/компанию
-# отдельным запросом (N+1), и канбан с сотней лидов делает сотню запросов к БД.
-# Контакты полностью убраны из логики CRM — грузим только manager и company.
-_EAGER = selectinload(Lead.manager), selectinload(Lead.company)
+_EAGER = (selectinload(Lead.manager),)
 
 
 def _filtered_query():
-    """Базовый запрос с учётом поиска и фильтров (GET-параметры)."""
     q = (request.args.get("q") or "").strip()
     stage = (request.args.get("stage") or "").strip()
     manager_id = (request.args.get("manager_id") or "").strip()
@@ -64,8 +60,6 @@ def _filtered_query():
     return query
 
 
-# ── Свои фильтры (Odoo: Add Custom Filter) ──────────────
-# Формат в URL: ?flt=field|op|value (можно несколько, складываются через И).
 CUSTOM_FILTER_FIELDS = {
     "stage": {"title": "Стадия", "ops": ("=", "!=")},
     "manager": {"title": "Менеджер", "ops": ("=", "!=")},
@@ -85,7 +79,6 @@ def _money_short(value) -> str:
 
 
 def _custom_filter_label(field: str, op_: str, value: str):
-    """Человекочитаемая подпись фильтра для чипса. None — значение мусорное."""
     title = CUSTOM_FILTER_FIELDS[field]["title"]
     op_title = OP_TITLES[op_]
     if field == "stage":
@@ -118,7 +111,6 @@ def _custom_filter_label(field: str, op_: str, value: str):
 
 
 def _parse_custom_filters():
-    """Разбирает ?flt=... в список {field, op, value, label, raw}. Мусор отбрасывает."""
     out = []
     for raw in request.args.getlist("flt"):
         parts = (raw or "").split("|", 2)
@@ -136,7 +128,6 @@ def _parse_custom_filters():
 
 
 def _manager_value(value: str):
-    """me/none/id → id менеджера или None. None-аноним → 'bad' (невалидно)."""
     if value == "me":
         return current_user.id
     if value == "none":
@@ -183,7 +174,6 @@ def _apply_custom_filter(query, f):
     return query.filter(Lead.source.ilike(f"%{value}%"))
 
 
-# ── Группировка канбана (Odoo: Group By) ──────────────────
 GROUP_BY_MODES = {"stage": "Стадия", "manager": "Менеджер", "priority": "Приоритет"}
 
 
@@ -193,12 +183,7 @@ def _active_group() -> str:
 
 
 def _group_columns(base, group: str):
-    """Колонки канбана под режим группировки.
-
-    Возвращает (columns, status_key, move_suffix): последние два —
-    data-атрибуты доски для drag&drop (что меняется при перетаскивании).
-    """
-    base = base.options(*_EAGER)  # связи одним запросом, а не по одному на карточку
+    base = base.options(*_EAGER)
     if group == "manager":
         managers = User.query.filter_by(is_active=True).order_by(User.full_name).all()
         columns = []
@@ -242,9 +227,7 @@ def _group_columns(base, group: str):
     return columns, "stage", "stage"
 
 
-# ── Хелперы URL для шаблонов ──────────────────────────────
 def _qs(**overrides) -> str:
-    """Текущий querystring с заменами: qs(stage='') — убрать, qs(q='x') — задать."""
     args = request.args.to_dict(flat=False)
     for key, val in overrides.items():
         if val is None or val == "" or val == []:
@@ -257,7 +240,6 @@ def _qs(**overrides) -> str:
 
 
 def _qs_wo_flt(idx: int) -> str:
-    """Текущий querystring без i-го своего фильтра."""
     args = request.args.to_dict(flat=False)
     rest = [f for i, f in enumerate(args.get("flt", [])) if i != idx]
     if rest:
@@ -268,7 +250,6 @@ def _qs_wo_flt(idx: int) -> str:
 
 
 def _search_context():
-    """Контекст для Odoo-поиска: менеджеры, счётчики стадий, активные фильтры."""
     managers = User.query.filter_by(is_active=True).order_by(User.full_name).all()
     rows = (
         db.session.query(Lead.stage, func.count(Lead.id))
@@ -303,7 +284,6 @@ def _search_context():
         ).order_by(SavedFilter.name).all(),
         "qs": _qs,
         "qs_wo_flt": _qs_wo_flt,
-        # Справочники для конструктора своих фильтров (JSON в шаблоне)
         "searchview_data": {
             "stages": [{"value": s.value, "title": s.title} for s in STAGE_ORDER],
             "managers": [{"id": m.id, "name": m.display_name} for m in managers],
@@ -314,12 +294,9 @@ def _search_context():
 @leads_bp.route("/")
 @login_required
 def kanban():
-    """Канбан-доска: колонки = стадии / менеджеры / приоритеты (Odoo: Group By)."""
     base = _filtered_query()
     group = _active_group()
     columns, status_key, move_suffix = _group_columns(base, group)
-    # (жадную загрузку связей делает _group_columns внутри)
-    # Полоска-прогресс в шапке колонки: доля её суммы от максимальной
     max_total = max([c["total"] for c in columns], default=0)
     for c in columns:
         c["share"] = round(c["total"] / max_total * 100) if max_total else 0
@@ -332,12 +309,10 @@ def kanban():
 @leads_bp.route("/list")
 @login_required
 def list_view():
-    """Табличный список лидов (альтернатива канбану), со страницами."""
     per_page = current_app.config["LEADS_PER_PAGE"]
     base = _filtered_query()
     group = _active_group()
     if group == "stage":
-        # Обычный список: пагинация на уровне БД (не грузим всю таблицу в память)
         total_count = base.count()
         pages = max(1, (total_count + per_page - 1) // per_page)
         page = min(_page_param(), pages)
@@ -345,12 +320,10 @@ def list_view():
         leads = query.offset((page - 1) * per_page).limit(per_page).all()
         page_sum = sum(float(l.expected_revenue or 0) for l in leads)
         groups = [{"title": None, "leads": leads, "total": page_sum}]
-        # Итог по ВСЕМУ фильтру (не по странице) — одним SQL-запросом
         total = float(
             base.with_entities(func.coalesce(func.sum(Lead.expected_revenue), 0)).scalar()
         )
     else:
-        # Группировка — это сводная доска, её показываем целиком (без страниц)
         columns, _, _ = _group_columns(base, group)
         groups = [
             {"title": c["title"], "leads": c["leads"], "total": c["total"]}
@@ -368,10 +341,8 @@ def list_view():
 @leads_bp.route("/<int:lead_id>")
 @login_required
 def detail(lead_id: int):
-    """Карточка лида: информация слева, лента общения справа."""
     lead = Lead.query.get_or_404(lead_id)
     messages = lead.messages.order_by(LeadMessage.created_at.desc()).all()
-    # Группируем ленту по дням (разделители дат как в референсе)
     days = [
         (day, list(group))
         for day, group in groupby(messages, key=lambda m: m.created_at.date() if m.created_at else None)
@@ -384,7 +355,6 @@ def detail(lead_id: int):
 @leads_bp.route("/<int:lead_id>/stage", methods=["POST"])
 @login_required
 def move_stage(lead_id: int):
-    """Смена стадии из статусбара-стрелок (как в Odoo)."""
     lead = Lead.query.get_or_404(lead_id)
     try:
         new_stage = LeadStage((request.form.get("stage") or "").strip())
@@ -392,7 +362,6 @@ def move_stage(lead_id: int):
         flash("Неизвестная стадия.", "danger")
         return redirect(url_for("leads.detail", lead_id=lead.id))
     old_stage = lead.stage
-    # Все стадии равноправны, финальных нет — просто переставляем.
     lead.stage = new_stage
     lead.log_stage_change(old_stage)
     db.session.commit()
@@ -403,7 +372,6 @@ def move_stage(lead_id: int):
 @leads_bp.route("/<int:lead_id>/notes", methods=["POST"])
 @login_required
 def add_note(lead_id: int):
-    """Добавить запись в ленту (заметка или сообщение)."""
     lead = Lead.query.get_or_404(lead_id)
     body = (request.form.get("body") or "").strip()
     kind_value = (request.form.get("kind") or MessageKind.NOTE.value).strip()
@@ -423,7 +391,6 @@ def add_note(lead_id: int):
 @leads_bp.route("/notes/<int:message_id>/delete", methods=["POST"])
 @login_required
 def delete_note(message_id: int):
-    """Удалить запись из ленты (только свою; админ — любую)."""
     msg = LeadMessage.query.get_or_404(message_id)
     lead_id = msg.lead_id
     if msg.author_id != current_user.id and current_user.role != "admin":
@@ -436,10 +403,6 @@ def delete_note(message_id: int):
 
 
 def _fill_from_form(lead: Lead, form) -> list[str]:
-    """Копирует поля формы в лид. Возвращает предупреждения о поддельных ссылках.
-    
-    Контакты полностью убраны — контакт это просто поля contact_name/phone/email внутри лида.
-    """
     warnings = []
     lead.title = (form.get("title") or "").strip()
     lead.contact_name = (form.get("contact_name") or "").strip()
@@ -462,7 +425,6 @@ def _fill_from_form(lead: Lead, form) -> list[str]:
             lead.stage = LeadStage(stage_value)
         except ValueError:
             pass
-    # Внешние ключи — только существующие записи. Поддельный id больше не сохраняется.
     manager_value = (form.get("manager_id") or "").strip()
     if manager_value.isdigit() and db.session.get(User, int(manager_value)):
         lead.manager_id = int(manager_value)
@@ -470,25 +432,17 @@ def _fill_from_form(lead: Lead, form) -> list[str]:
         if manager_value:
             warnings.append("указанный менеджер не найден — поле очищено")
         lead.manager_id = None
-    company_value = (form.get("company_id") or "").strip()
-    if company_value.isdigit() and db.session.get(Company, int(company_value)):
-        lead.company_id = int(company_value)
-    else:
-        if company_value:
-            warnings.append("указанная компания не найдена — поле очищено")
+    # company_id и contact_id игнорируем — модули удалены, но чтобы не падало если придет старый POST
+    if hasattr(lead, 'company_id'):
         lead.company_id = None
-    # Контакты убраны — contact_id больше не используем, но чистим если вдруг пришел
-    # Чтобы не плодить призраков, просто игнорируем.
     if hasattr(lead, 'contact_id'):
         lead.contact_id = None
     return warnings
 
 
 def _form_context():
-    """Списки для выпадающих меню формы лида. Контакты убраны."""
     return {
         "managers": User.query.filter_by(is_active=True).order_by(User.full_name).all(),
-        "companies": Company.query.order_by(Company.name).all(),
         "stages": STAGE_ORDER,
     }
 
@@ -537,11 +491,7 @@ def edit(lead_id: int):
 @leads_bp.route("/<int:lead_id>/delete", methods=["POST"])
 @login_required
 def delete(lead_id: int):
-    """Удалить карточку лида — доступно всем пользователям (любой может удалять)."""
     lead = Lead.query.get_or_404(lead_id)
-    # Отвязываем заявки (сами заявки не удаляем!)
-    for req in lead.requests.all():
-        req.lead_id = None
     db.session.delete(lead)
     db.session.commit()
     flash(f"Лид «{lead.title}» удалён.", "info")
@@ -551,15 +501,10 @@ def delete(lead_id: int):
 @leads_bp.route("/clear-all", methods=["POST"])
 @login_required
 def clear_all():
-    """Удалить ВСЕ лиды (компании) в CRM — доступно всем пользователям. Первый шаг глобального обновления."""
     from ..models.lead import LeadMessage
-    from ..models.request import Request as ReqModel, RequestMessage
-    # Считаем
     leads_count = Lead.query.count()
-    # Отвязываем заявки от лидов
-    db.session.query(ReqModel).update({ReqModel.lead_id: None})
     db.session.query(LeadMessage).delete()
     db.session.query(Lead).delete()
     db.session.commit()
-    flash(f"Удалены ВСЕ лиды (компании): {leads_count} шт. Контакты убраны из логики.", "info")
+    flash(f"Удалены ВСЕ лиды: {leads_count} шт.", "info")
     return redirect(request.form.get("next") or url_for("leads.kanban"))

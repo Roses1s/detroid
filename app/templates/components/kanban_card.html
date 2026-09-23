@@ -1,4 +1,4 @@
-{# Карточка лида (компании) — 1в1 как в Odoo CRM, контакты убраны, удаление доступно всем #}
+{# Карточка лида — только лиды, без заявок и компаний #}
 <div class="oe_kanban_card oe_kanban_global_click kanban-card d-flex flex-column" draggable="true" data-lead-id="{{ lead.id }}">
   <div class="oe_kanban_content flex-grow-1">
     <div class="oe_kanban_details">
@@ -14,10 +14,8 @@
     </div>
     {% endif %}
     <div>
-      {% if lead.company %}
-        <span class="o_text_overflow o_kanban_record_subtitle">{{ lead.company.name }}</span>
-      {% elif lead.contact_name %}
-        <span class="o_text_overflow o_kanban_record_subtitle">{{ lead.contact_name }} — {{ lead.phone or "" }}</span>
+      {% if lead.contact_name %}
+        <span class="o_text_overflow o_kanban_record_subtitle">{{ lead.contact_name }}{% if lead.phone %} — {{ lead.phone }}{% endif %}</span>
       {% endif %}
     </div>
     {% if lead.tag_list %}
@@ -32,7 +30,6 @@
     <div class="o_kanban_record_bottom">
       <div class="oe_kanban_bottom_left">
         <span class="kanban-card__stars {% if not lead.priority %}kanban-card__stars--empty{% endif %}" title="Приоритет: {{ lead.priority }}/3">{% if lead.priority %}{{ "★" * lead.priority }}{% else %}★★★{% endif %}</span>
-        <a href="{{ url_for('requests.create', lead_id=lead.id) }}" class="btn btn--secondary btn--small" style="font-size:11px" title="Создать заявку на перевозку прямо из лида">+ Заявка</a>
       </div>
       <div class="oe_kanban_bottom_right">
         {% if lead.manager %}

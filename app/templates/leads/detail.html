@@ -6,7 +6,7 @@
   <div class="o_cp_left">
     <div class="o_cp_left_top">
       <h1 class="o_breadcrumb">
-        <a class="o_breadcrumb__link" href="{{ url_for('leads.kanban') }}">Лиды (Компании)</a>
+        <a class="o_breadcrumb__link" href="{{ url_for('leads.kanban') }}">Лиды</a>
         <span class="o_breadcrumb__sep">/</span>
         <span class="o_breadcrumb__current">{{ lead.title }}</span>
       </h1>
@@ -14,7 +14,6 @@
     <div class="o_cp_buttons">
       <a class="btn btn--primary" href="{{ url_for('leads.edit', lead_id=lead.id) }}">Изменить</a>
       <a class="btn btn--secondary" href="{{ url_for('leads.create') }}">Создать</a>
-      <a class="btn btn--secondary" href="{{ url_for('requests.create', lead_id=lead.id) }}">📝 Создать заявку</a>
       <form method="post" action="{{ url_for('leads.delete', lead_id=lead.id) }}" style="display:inline" onsubmit="return confirm('Удалить лид «{{ lead.title }}»? Удалять могут все пользователи.')">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn--danger">Удалить</button>
@@ -48,7 +47,7 @@
     <h2 class="o_sheet_title">{{ lead.title }}</h2>
 
     <div class="o_lead_layout">
-      {# ── Слева: информация о клиенте (компании) ── #}
+      {# ── Слева: информация о лиде ── #}
       <div>
         <div class="o_group">
           <div class="o_group_col">
@@ -58,12 +57,6 @@
             <span class="o_field">{{ lead.phone or "—" }}</span>
             <span class="o_label">Email</span>
             <span class="o_field">{{ lead.email or "—" }}</span>
-            <span class="o_label">Компания</span>
-            <span class="o_field">
-              {% if lead.company %}
-                <a href="{{ url_for('contacts.company_detail', company_id=lead.company.id) }}">{{ lead.company.name }}</a>
-              {% else %}— (лид сам является компанией){% endif %}
-            </span>
           </div>
           <div class="o_group_col">
             <span class="o_label">Менеджер</span>
@@ -87,32 +80,6 @@
         <div class="o_sheet_section">
           <div class="o_sheet_section__title">Описание</div>
           <p class="pre-line">{{ lead.notes }}</p>
-        </div>
-        {% endif %}
-
-        {% if lead.requests.count() %}
-        <div class="o_sheet_section">
-          <div class="o_sheet_section__title">Заявки на перевозку (создаются прямо из лида)</div>
-          <div class="o_list_view">
-            <table>
-              <tbody>
-                {% for r in lead.requests %}
-                <tr>
-                  <td><a href="{{ url_for('requests.detail', request_id=r.id) }}">{{ r.number or ("#%d" % r.id) }} — {{ r.title }}</a></td>
-                  <td class="muted">{{ r.origin or "" }} → {{ r.destination or "" }}</td>
-                  <td><span class="stage-badge {{ r.status.css_class }}">{{ r.status.title }}</span></td>
-                  <td class="o_list_num"><strong>{{ r.client_price | money }}</strong></td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-          <p style="margin-top:8px"><a class="btn btn--secondary btn--small" href="{{ url_for('requests.create', lead_id=lead.id) }}">+ Создать заявку из этого лида</a></p>
-        </div>
-        {% else %}
-        <div class="o_sheet_section">
-          <div class="o_sheet_section__title">Заявки</div>
-          <p class="muted">Заявок пока нет. <a class="btn btn--secondary btn--small" href="{{ url_for('requests.create', lead_id=lead.id) }}">Создать заявку на перевозку</a> прямо из этого лида.</p>
         </div>
         {% endif %}
 

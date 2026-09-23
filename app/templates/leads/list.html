@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Лиды (Компании) — {{ app_name }}{% endblock %}
+{% block title %}Лиды — {{ app_name }}{% endblock %}
 
 {% block control_panel %}
 <div class="o_control_panel">
@@ -7,7 +7,7 @@
     <div class="o_cp_buttons">
       <a class="btn btn--primary" href="{{ url_for('leads.create') }}">Создать</a>
     </div>
-    <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Лиды (Компании)</span></h1>
+    <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Лиды</span></h1>
   </div>
   <div class="o_cp_center">
     {% set search_action = url_for('leads.list_view') %}
@@ -53,9 +53,8 @@
     <table>
       <thead>
         <tr>
-          <th>Название (Компания)</th>
+          <th>Название</th>
           <th>Клиент</th>
-          <th>Компания из справочника</th>
           <th>Телефон</th>
           <th>Стадия</th>
           <th>Выручка</th>
@@ -69,7 +68,7 @@
         {% for g in groups %}
           {% if g.title %}
           <tr class="o_group_row">
-            <td colspan="9">{{ g.title }} · {{ g.leads | length }} · {{ g.total | money }}</td>
+            <td colspan="8">{{ g.title }} · {{ g.leads | length }} · {{ g.total | money }}</td>
           </tr>
           {% endif %}
           {% for lead in g.leads %}
@@ -77,7 +76,6 @@
           <tr>
             <td><a href="{{ url_for('leads.detail', lead_id=lead.id) }}">{{ lead.title }}</a></td>
             <td>{{ lead.contact_name or "" }}</td>
-            <td>{{ lead.company.name if lead.company else "" }}</td>
             <td>{{ lead.phone or "" }}</td>
             <td><span class="stage-badge {{ lead.stage.css_class }}">{{ lead.stage.title }}</span></td>
             <td>{{ lead.expected_revenue | money }}</td>
@@ -93,12 +91,12 @@
           {% endfor %}
         {% endfor %}
         {% if ns.n == 0 %}
-        <tr><td colspan="9" class="muted">Ничего не найдено. Измените фильтры или создайте лид-компанию. Контакты убраны из CRM.</td></tr>
+        <tr><td colspan="8" class="muted">Ничего не найдено. Измените фильтры или создайте лид.</td></tr>
         {% endif %}
       </tbody>
     </table>
     <div class="o_list_view__footer">
-      Показано {{ ns.n }} из {{ total_count }} записей · Итого по фильтру: {{ total | money }} · Контакты убраны
+      Показано {{ ns.n }} из {{ total_count }} записей · Итого по фильтру: {{ total | money }}
     </div>
   </div>
 </div>

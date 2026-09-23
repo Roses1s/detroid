@@ -1,6 +1,7 @@
-"""REST API (JSON). Используется канбаном: drag&drop, быстрое создание, фильтры."""
+"""REST API — только лиды и фильтры (компании и заявки отключены)."""
 from flask import Blueprint
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
-from . import contacts_api, filters_api, leads_api, requests_api  # noqa: E402,F401 — регистрирует маршруты на api_bp
+from . import filters_api, leads_api  # noqa: E402,F401 — регистрирует маршруты на api_bp
+# contacts_api и requests_api отключены — модули удалены

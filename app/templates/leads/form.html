@@ -6,7 +6,7 @@
   <div class="o_cp_left">
     <div class="o_cp_left_top">
       <h1 class="o_breadcrumb">
-        <a class="o_breadcrumb__link" href="{{ url_for('leads.kanban') }}">Лиды (Компании)</a>
+        <a class="o_breadcrumb__link" href="{{ url_for('leads.kanban') }}">Лиды</a>
         <span class="o_breadcrumb__sep">/</span>
         <span class="o_breadcrumb__current">{% if is_new %}Новый{% else %}{{ lead.title }}{% endif %}</span>
       </h1>
@@ -31,7 +31,7 @@
     <form method="post" id="lead-form" class="form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input class="input form__title-input" type="text" name="title" required
-             value="{{ lead.title or '' }}" placeholder="Название компании / сделки">
+             value="{{ lead.title or '' }}" placeholder="Название лида">
 
       <div class="o_group">
         <div class="o_group_col">
@@ -79,28 +79,9 @@
       </div>
 
       <div class="o_sheet_section">
-        <div class="o_sheet_section__title">Компания</div>
-        <div class="o_group">
-          <div class="o_group_col">
-            <label class="o_label" for="company_id">Компания (если есть в справочнике)</label>
-            <select class="input" id="company_id" name="company_id">
-              <option value="">—</option>
-              {% for c in companies %}
-                <option value="{{ c.id }}" {% if lead.company_id == c.id %}selected{% endif %}>{{ c.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="o_group_col">
-            <span class="o_label">Контакты убраны</span>
-            <span class="o_field muted">Контактное лицо указывается выше в поле «Клиент». Отдельный справочник контактов удалён из CRM.</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="o_sheet_section">
         <div class="o_sheet_section__title">Описание</div>
         <textarea class="input input--area" name="notes" rows="4"
-                  placeholder="Детали сделки, договорённости…">{{ lead.notes or '' }}</textarea>
+                  placeholder="Детали лида, договорённости…">{{ lead.notes or '' }}</textarea>
       </div>
     </form>
 

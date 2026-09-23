@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Лиды (Компании) — {{ app_name }}{% endblock %}
+{% block title %}Лиды — {{ app_name }}{% endblock %}
 
 {% block control_panel %}
 <div class="o_control_panel">
@@ -7,7 +7,7 @@
     <div class="o_cp_buttons">
       <a class="btn btn--primary" href="{{ url_for('leads.create') }}">Создать</a>
     </div>
-    <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Лиды (Компании)</span></h1>
+    <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Лиды</span></h1>
   </div>
   <div class="o_cp_center">
     {% set search_action = url_for('leads.kanban') %}
@@ -51,7 +51,7 @@
       {% endfor %}
     </div>
     <div class="kanban-quick" data-quick-form="{{ col.drop }}" hidden>
-      <input type="text" class="input input--small" placeholder="Название компании…" data-quick-title>
+      <input type="text" class="input input--small" placeholder="Название лида…" data-quick-title>
       <div class="kanban-quick__btns">
         <button type="button" class="btn btn--primary btn--small" data-quick-save>Добавить</button>
         <button type="button" class="btn btn--secondary btn--small" data-quick-cancel>Отмена</button>
