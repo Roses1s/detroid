@@ -11,7 +11,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import selectinload
 
 from ..extensions import db
-from ..models import Company, Contact, Lead, User
+from ..models import Company, Lead, User
 from ..models.lead import MessageKind
 from ..models.request import STATUS_ORDER, RequestMessage, RequestStatus
 from ..models.request import Request as RequestModel
@@ -20,11 +20,11 @@ requests_bp = Blueprint("requests", __name__, url_prefix="/requests")
 
 PER_PAGE = 80
 
-# Жадная загрузка связей: карточка заявки дёргает менеджера/компанию/контакт
+# Жадная загрузка связей: карточка заявки дёргает менеджера/компанию/лид
+# Контакты убраны из логики CRM
 _EAGER = (
     selectinload(RequestModel.manager),
     selectinload(RequestModel.company),
-    selectinload(RequestModel.contact),
     selectinload(RequestModel.lead),
 )
 
@@ -214,7 +214,7 @@ def advance(request_id: int):
 @requests_bp.route("/bulk-delete", methods=["POST"])
 @login_required
 def bulk_delete():
-    """Массовое удаление выбранных чекбоксами заявок."""
+    """Массовое удаление выбранных чекбоксами заявок. Доступно всем пользователям."""
     ids = [int(v) for v in request.form.getlist("ids") if v.isdigit()]
     if ids:
         reqs = RequestModel.query.filter(RequestModel.id.in_(ids)).all()
@@ -222,6 +222,19 @@ def bulk_delete():
             db.session.delete(req)
         db.session.commit()
         flash(f"Удалено заявок: {len(reqs)}.", "info")
+    return redirect(request.form.get("next") or url_for("requests.index"))
+
+
+@requests_bp.route("/clear-all", methods=["POST"])
+@login_required
+def clear_all():
+    """Удалить ВСЕ заявки в CRM — доступно всем пользователям (первый шаг глобального обновления)."""
+    count = RequestModel.query.count()
+    # Удаляем все сообщения заявок сначала (каскад, но явно)
+    db.session.query(RequestMessage).delete()
+    db.session.query(RequestModel).delete()
+    db.session.commit()
+    flash(f"Удалены ВСЕ заявки: {count} шт. Контакты уже убраны из логики.", "info")
     return redirect(request.form.get("next") or url_for("requests.index"))
 
 
@@ -278,7 +291,10 @@ def _parse_float(value, default=0.0):
 
 
 def _fill_from_form(req: RequestModel, form) -> list[str]:
-    """Копирует поля формы в заявку. Возвращает предупреждения о поддельных ссылках."""
+    """Копирует поля формы в заявку. Возвращает предупреждения о поддельных ссылках.
+    
+    Контакты убраны из CRM — contact_id больше не используется.
+    """
     warnings = []
     req.title = (form.get("title") or "").strip()
     req.origin = (form.get("origin") or "").strip()
@@ -326,23 +342,18 @@ def _fill_from_form(req: RequestModel, form) -> list[str]:
         if company_value:
             warnings.append("указанная компания не найдена — поле очищено")
         req.company_id = None
-    contact_value = (form.get("contact_id") or "").strip()
-    if contact_value.isdigit() and db.session.get(Contact, int(contact_value)):
-        req.contact_id = int(contact_value)
-    else:
-        if contact_value:
-            warnings.append("указанный контакт не найден — поле очищено")
+    # Контакты убраны — чистим поле
+    if hasattr(req, 'contact_id'):
         req.contact_id = None
     return warnings
 
 
 def _form_context():
-    """Списки для выпадающих меню формы заявки."""
+    """Списки для выпадающих меню формы заявки. Контакты убраны."""
     return {
         "managers": User.query.filter_by(is_active=True).order_by(User.full_name).all(),
         "leads": Lead.query.order_by(Lead.updated_at.desc()).all(),
         "companies": Company.query.order_by(Company.name).all(),
-        "contacts": Contact.query.order_by(Contact.last_name, Contact.first_name).all(),
         "statuses": STATUS_ORDER,
     }
 
@@ -358,7 +369,6 @@ def _prefill_from_lead(req: RequestModel, lead_id: str) -> None:
     req.title = lead.title
     req.manager_id = lead.manager_id
     req.company_id = lead.company_id
-    req.contact_id = lead.contact_id
     req.client_price = float(lead.expected_revenue or 0)
 
 

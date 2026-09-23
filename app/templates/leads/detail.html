@@ -6,7 +6,7 @@
   <div class="o_cp_left">
     <div class="o_cp_left_top">
       <h1 class="o_breadcrumb">
-        <a class="o_breadcrumb__link" href="{{ url_for('leads.kanban') }}">Лиды</a>
+        <a class="o_breadcrumb__link" href="{{ url_for('leads.kanban') }}">Лиды (Компании)</a>
         <span class="o_breadcrumb__sep">/</span>
         <span class="o_breadcrumb__current">{{ lead.title }}</span>
       </h1>
@@ -15,6 +15,10 @@
       <a class="btn btn--primary" href="{{ url_for('leads.edit', lead_id=lead.id) }}">Изменить</a>
       <a class="btn btn--secondary" href="{{ url_for('leads.create') }}">Создать</a>
       <a class="btn btn--secondary" href="{{ url_for('requests.create', lead_id=lead.id) }}">📝 Создать заявку</a>
+      <form method="post" action="{{ url_for('leads.delete', lead_id=lead.id) }}" style="display:inline" onsubmit="return confirm('Удалить лид «{{ lead.title }}»? Удалять могут все пользователи.')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn--danger">Удалить</button>
+      </form>
     </div>
   </div>
 </div>
@@ -44,11 +48,11 @@
     <h2 class="o_sheet_title">{{ lead.title }}</h2>
 
     <div class="o_lead_layout">
-      {# ── Слева: информация о лиде ── #}
+      {# ── Слева: информация о клиенте (компании) ── #}
       <div>
         <div class="o_group">
           <div class="o_group_col">
-            <span class="o_label">Контакт</span>
+            <span class="o_label">Клиент (контактное лицо)</span>
             <span class="o_field">{{ lead.contact_name or "—" }}</span>
             <span class="o_label">Телефон</span>
             <span class="o_field">{{ lead.phone or "—" }}</span>
@@ -58,13 +62,7 @@
             <span class="o_field">
               {% if lead.company %}
                 <a href="{{ url_for('contacts.company_detail', company_id=lead.company.id) }}">{{ lead.company.name }}</a>
-              {% else %}—{% endif %}
-            </span>
-            <span class="o_label">Контакт</span>
-            <span class="o_field">
-              {% if lead.contact %}
-                <a href="{{ url_for('contacts.contact_detail', contact_id=lead.contact.id) }}">{{ lead.contact.full_name }}</a>
-              {% else %}—{% endif %}
+              {% else %}— (лид сам является компанией){% endif %}
             </span>
           </div>
           <div class="o_group_col">
@@ -94,7 +92,7 @@
 
         {% if lead.requests.count() %}
         <div class="o_sheet_section">
-          <div class="o_sheet_section__title">Заявки</div>
+          <div class="o_sheet_section__title">Заявки на перевозку (создаются прямо из лида)</div>
           <div class="o_list_view">
             <table>
               <tbody>
@@ -103,11 +101,18 @@
                   <td><a href="{{ url_for('requests.detail', request_id=r.id) }}">{{ r.number or ("#%d" % r.id) }} — {{ r.title }}</a></td>
                   <td class="muted">{{ r.origin or "" }} → {{ r.destination or "" }}</td>
                   <td><span class="stage-badge {{ r.status.css_class }}">{{ r.status.title }}</span></td>
+                  <td class="o_list_num"><strong>{{ r.client_price | money }}</strong></td>
                 </tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
+          <p style="margin-top:8px"><a class="btn btn--secondary btn--small" href="{{ url_for('requests.create', lead_id=lead.id) }}">+ Создать заявку из этого лида</a></p>
+        </div>
+        {% else %}
+        <div class="o_sheet_section">
+          <div class="o_sheet_section__title">Заявки</div>
+          <p class="muted">Заявок пока нет. <a class="btn btn--secondary btn--small" href="{{ url_for('requests.create', lead_id=lead.id) }}">Создать заявку на перевозку</a> прямо из этого лида.</p>
         </div>
         {% endif %}
 
@@ -117,7 +122,7 @@
         </p>
       </div>
 
-      {# ── Справа: лента общения ── #}
+      {# ── Справа: лог / комментарии ── #}
       <div class="o_lead_chatter">
         <div class="o_chatter" id="chatter">
           <div class="o_chatter__buttons">

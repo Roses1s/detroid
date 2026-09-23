@@ -6,7 +6,7 @@
   <div class="o_cp_left">
     <div class="o_cp_left_top">
       <h1 class="o_breadcrumb">
-        <a class="o_breadcrumb__link" href="{{ url_for('leads.kanban') }}">Лиды</a>
+        <a class="o_breadcrumb__link" href="{{ url_for('leads.kanban') }}">Лиды (Компании)</a>
         <span class="o_breadcrumb__sep">/</span>
         <span class="o_breadcrumb__current">{% if is_new %}Новый{% else %}{{ lead.title }}{% endif %}</span>
       </h1>
@@ -18,7 +18,7 @@
       {% else %}
         <a class="btn btn--secondary" href="{{ url_for('leads.detail', lead_id=lead.id) }}">Отмена</a>
         <button type="submit" class="btn btn--danger" form="delete-form"
-                onclick="return confirm('Удалить лид «{{ lead.title }}»?')">Удалить</button>
+                onclick="return confirm('Удалить лид «{{ lead.title }}»? Все смогут удалять карточки.')">Удалить</button>
       {% endif %}
     </div>
   </div>
@@ -31,11 +31,11 @@
     <form method="post" id="lead-form" class="form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input class="input form__title-input" type="text" name="title" required
-             value="{{ lead.title or '' }}" placeholder="Название сделки">
+             value="{{ lead.title or '' }}" placeholder="Название компании / сделки">
 
       <div class="o_group">
         <div class="o_group_col">
-          <label class="o_label" for="contact_name">Контакт</label>
+          <label class="o_label" for="contact_name">Клиент (контактное лицо)</label>
           <input class="input" type="text" id="contact_name" name="contact_name"
                  value="{{ lead.contact_name or '' }}" placeholder="Иван Петров">
           <label class="o_label" for="phone">Телефон</label>
@@ -79,10 +79,10 @@
       </div>
 
       <div class="o_sheet_section">
-        <div class="o_sheet_section__title">Связи</div>
+        <div class="o_sheet_section__title">Компания</div>
         <div class="o_group">
           <div class="o_group_col">
-            <label class="o_label" for="company_id">Компания</label>
+            <label class="o_label" for="company_id">Компания (если есть в справочнике)</label>
             <select class="input" id="company_id" name="company_id">
               <option value="">—</option>
               {% for c in companies %}
@@ -91,13 +91,8 @@
             </select>
           </div>
           <div class="o_group_col">
-            <label class="o_label" for="contact_id">Контакт</label>
-            <select class="input" id="contact_id" name="contact_id">
-              <option value="">—</option>
-              {% for c in contacts %}
-                <option value="{{ c.id }}" {% if lead.contact_id == c.id %}selected{% endif %}>{{ c.full_name }}{% if c.company %} ({{ c.company.name }}){% endif %}</option>
-              {% endfor %}
-            </select>
+            <span class="o_label">Контакты убраны</span>
+            <span class="o_field muted">Контактное лицо указывается выше в поле «Клиент». Отдельный справочник контактов удалён из CRM.</span>
           </div>
         </div>
       </div>

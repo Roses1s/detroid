@@ -73,7 +73,7 @@ def main() -> int:
     r = c.get("/api/leads")
     leads = r.get_json()
     check("API leads list == 7", isinstance(leads, list) and len(leads) == 7, str(leads)[:200])
-    check("API lead has company/contact fields", "company_id" in leads[0] and "contact_id" in leads[0])
+    check("API lead has company field (contacts removed)", "company_id" in leads[0])
     lead_id = leads[0]["id"]
     r = c.patch(f"/api/leads/{lead_id}/stage", json={"stage": "potential"})
     check("API move stage", r.status_code == 200 and r.get_json()["stage"] == "potential")
@@ -124,19 +124,19 @@ def main() -> int:
     # Поддельные внешние ключи не сохраняются (нормализуются в пусто + предупреждение)
     fake_lead = c.post("/api/leads", json={"title": "FK-тест"}).get_json()
     r = c.post(f"/leads/{fake_lead['id']}/edit",
-               data={"title": "FK-тест", "manager_id": "999999", "company_id": "888888",
-                     "contact_id": "777777"},
+               data={"title": "FK-тест", "manager_id": "999999", "company_id": "888888"},
                follow_redirects=True)
     html = r.data.decode()
     got = [x for x in c.get("/api/leads").get_json() if x["id"] == fake_lead["id"]][0]
     check("fake FK ids rejected in form",
-          got["manager_id"] is None and got["company_id"] is None and got["contact_id"] is None
+          got["manager_id"] is None and got["company_id"] is None
           and "менеджер не найден" in html, html[:400])
     c.delete(f"/api/leads/{fake_lead['id']}")
-    tmp_contact = c.post("/api/contacts", json={"first_name": "ФК", "last_name": "Тест"}).get_json()
-    r = c.patch(f"/api/contacts/{tmp_contact['id']}", json={"company_id": 424242})
-    check("fake company_id rejected in API", r.get_json()["company_id"] is None)
-    c.delete(f"/api/contacts/{tmp_contact['id']}")
+    # Контакты убраны — API контактов должен возвращать 410
+    r = c.get("/api/contacts")
+    check("contacts API removed returns 410", r.status_code == 410)
+    r = c.post("/api/contacts", json={"first_name": "ФК", "last_name": "Тест"})
+    check("contacts API create returns 410", r.status_code == 410)
     # Пагинация списков: временно делаем страницу на 3 записи
     app.config["LEADS_PER_PAGE"] = 3
     r = c.get("/leads/list")
@@ -145,8 +145,8 @@ def main() -> int:
     r = c.get("/leads/list?page=2")
     check("leads list page 2 renders", r.status_code == 200)
     app.config["LEADS_PER_PAGE"] = 50
-    r = c.get("/contacts?page=1")
-    check("contacts list renders with pager vars", r.status_code == 200 and "из" in r.data.decode())
+    r = c.get("/contacts?page=1", follow_redirects=False)
+    check("contacts list removed redirects to kanban", r.status_code in (302, 308) and "/leads" in r.headers.get("Location",""))
     r = c.get("/requests/?page=999")
     check("requests page overflow clamps", r.status_code == 200)
     # Drag&drop между группами: менеджер и приоритет
@@ -163,25 +163,12 @@ def main() -> int:
     check("API quick create no manager",
           r.status_code == 201 and r.get_json()["manager_id"] is None)
 
-    # ── ЭТАП 3: контакты ──────────────────────────────────
-    r = c.get("/contacts")
-    html = r.data.decode()
-    check("contacts list renders + demo contact", r.status_code == 200 and "Петров" in html)
+    # ── ЭТАП 3: контакты УБРАНЫ из CRM ───────────────────────
+    # Контакты полностью убраны — /contacts редиректит на /leads/
+    r = c.get("/contacts", follow_redirects=False)
+    check("contacts removed redirects", r.status_code in (302,308))
     r = c.get("/api/contacts")
-    contacts = r.get_json()
-    check("API contacts list >= 2", isinstance(contacts, list) and len(contacts) >= 2)
-    contact_id = contacts[0]["id"]
-    r = c.get(f"/contacts/{contact_id}")
-    check("contact detail renders", r.status_code == 200 and "Лиды" in r.data.decode())
-    r = c.post("/contacts/new",
-               data={"first_name": "Тест", "last_name": "Тестов", "phone": "+7 (000) 000-00-00"},
-               follow_redirects=True)
-    check("contact create via form", r.status_code == 200 and "Тестов" in r.data.decode())
-    new_contact_id = Contact_id_from_detail(c, "Тест Тестов")
-    r = c.post(f"/contacts/{new_contact_id}/edit",
-               data={"first_name": "Тест", "last_name": "Изменённый"},
-               follow_redirects=True)
-    check("contact edit via form", r.status_code == 200 and "Изменённый" in r.data.decode())
+    check("contacts API removed 410", r.status_code == 410)
 
     # ── ЭТАП 3: компании ──────────────────────────────────
     r = c.get("/companies")
@@ -192,7 +179,7 @@ def main() -> int:
     company_id = [x for x in companies if "Восток" in x["name"]][0]["id"]
     r = c.get(f"/companies/{company_id}")
     html = r.data.decode()
-    check("company detail shows contact+lead", r.status_code == 200 and "Петров" in html and "Казань" in html)
+    check("company detail shows lead (contacts removed)", r.status_code == 200 and "Казань" in html)
     r = c.post("/companies/new", data={"name": "ООО «Тест»"}, follow_redirects=True)
     check("company create via form", r.status_code == 200 and "Тест" in r.data.decode())
     test_company_id = Company_id_from_api(c, "Тест")
@@ -202,41 +189,33 @@ def main() -> int:
     # ── ЭТАП 3: связи лид ↔ контакт/компания ──────────────
     r = c.get(f"/leads/{lead_id}/edit")
     html = r.data.decode()
-    check("lead form has links section", "Связи" in html and "company_id" in html and "contact_id" in html)
+    check("lead form has company link (contacts removed)", "Компания" in html and "company_id" in html)
     r = c.post(f"/leads/{lead_id}/edit",
                data={"title": leads[0]["title"], "stage": "lead",
-                     "company_id": str(test_company_id), "contact_id": str(new_contact_id)},
+                     "company_id": str(test_company_id)},
                follow_redirects=True)
-    check("lead link via form", r.status_code == 200)
+    check("lead link via form (company only)", r.status_code == 200)
     r = c.get(f"/companies/{test_company_id}")
     check("company detail shows linked lead", leads[0]["title"] in r.data.decode())
     r = c.get("/api/leads")
     updated = [x for x in r.get_json() if x["id"] == lead_id][0]
-    check("API lead shows links", updated["company_id"] == test_company_id and updated["contact_id"] == new_contact_id,
+    check("API lead shows company link (contacts removed)", updated["company_id"] == test_company_id,
           str(updated))
 
-    # ── ЭТАП 3: API CRUD ──────────────────────────────────
+    # ── ЭТАП 3: API CRUD (контакты убраны) ───────────────────
     r = c.post("/api/companies", json={"name": "API Company"})
     check("API company create", r.status_code == 201)
     api_co_id = r.get_json()["id"]
     r = c.patch(f"/api/companies/{api_co_id}", json={"phone": "+7 (111)"})
     check("API company patch", r.status_code == 200 and r.get_json()["phone"] == "+7 (111)")
-    r = c.post("/api/contacts", json={"first_name": "Api", "last_name": "User"})
-    check("API contact create", r.status_code == 201)
-    api_c_id = r.get_json()["id"]
     r = c.delete(f"/api/companies/{api_co_id}")
     check("API company delete", r.status_code == 200)
-    r = c.delete(f"/api/contacts/{api_c_id}")
-    check("API contact delete", r.status_code == 200)
+    r = c.get("/api/contacts")
+    check("API contacts still 410", r.status_code == 410)
 
-    # ── ЭТАП 3: удаление отвязывает, а не трёт лиды ───────
-    r = c.post(f"/contacts/{new_contact_id}/delete", follow_redirects=True)
-    check("contact delete via form", r.status_code == 200)
-    r = c.get("/api/leads")
-    updated = [x for x in r.get_json() if x["id"] == lead_id][0]
-    check("lead survives contact delete (unlinked)", updated["contact_id"] is None)
+    # ── ЭТАП 3: удаление компании отвязывает лиды ────────
     r = c.post(f"/companies/{test_company_id}/delete", follow_redirects=True)
-    check("company delete via form", r.status_code == 200)
+    check("company delete via form (any user can delete)", r.status_code == 200)
     r = c.get("/api/leads")
     updated = [x for x in r.get_json() if x["id"] == lead_id][0]
     check("lead survives company delete (unlinked)", updated["company_id"] is None)
@@ -544,11 +523,11 @@ def main() -> int:
     check("custom 404 page", r.status_code == 404 and "Такой страницы нет" in r.data.decode())
 
     # ── 404 ───────────────────────────────────────────────
-    check("missing contact 404", c.get("/contacts/999999").status_code == 404)
+    check("missing contact returns redirect (contacts removed)", c.get("/contacts/999999", follow_redirects=False).status_code in (302,308,410))
     check("missing company 404", c.get("/companies/999999").status_code == 404)
 
     # ── Прочие страницы ───────────────────────────────────
-    for url in ["/requests/", "/requests/kanban", "/reports", "/leads/new", "/contacts/new", "/companies/new"]:
+    for url in ["/requests/", "/requests/kanban", "/reports", "/leads/new", "/companies/new"]:
         check(f"GET {url} 200", c.get(url).status_code == 200)
 
     failed = [n for n, ok in results if not ok]
@@ -556,14 +535,6 @@ def main() -> int:
     if failed:
         print("Упали:", failed)
     return 0 if not failed else 1
-
-
-def Contact_id_from_detail(client, full_name: str) -> int:
-    """Находит id контакта по полному имени через API."""
-    for item in client.get("/api/contacts").get_json():
-        if item["full_name"] == full_name:
-            return item["id"]
-    raise AssertionError(f"contact {full_name} not found")
 
 
 def Company_id_from_api(client, part: str) -> int:

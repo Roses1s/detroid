@@ -8,7 +8,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import selectinload
 
 from ..extensions import db
-from ..models import Company, Contact, SavedFilter, User
+from ..models import Company, SavedFilter, User
 from ..models.lead import STAGE_ORDER, Lead, LeadMessage, LeadStage, MessageKind
 
 leads_bp = Blueprint("leads", __name__, url_prefix="/leads")
@@ -22,7 +22,8 @@ def _page_param() -> int:
 
 # Жадная загрузка связей: без неё каждая карточка дёргает менеджера/компанию
 # отдельным запросом (N+1), и канбан с сотней лидов делает сотню запросов к БД.
-_EAGER = selectinload(Lead.manager), selectinload(Lead.company), selectinload(Lead.contact)
+# Контакты полностью убраны из логики CRM — грузим только manager и company.
+_EAGER = selectinload(Lead.manager), selectinload(Lead.company)
 
 
 def _filtered_query():
@@ -435,7 +436,10 @@ def delete_note(message_id: int):
 
 
 def _fill_from_form(lead: Lead, form) -> list[str]:
-    """Копирует поля формы в лид. Возвращает предупреждения о поддельных ссылках."""
+    """Копирует поля формы в лид. Возвращает предупреждения о поддельных ссылках.
+    
+    Контакты полностью убраны — контакт это просто поля contact_name/phone/email внутри лида.
+    """
     warnings = []
     lead.title = (form.get("title") or "").strip()
     lead.contact_name = (form.get("contact_name") or "").strip()
@@ -458,8 +462,7 @@ def _fill_from_form(lead: Lead, form) -> list[str]:
             lead.stage = LeadStage(stage_value)
         except ValueError:
             pass
-    # Внешние ключи — только существующие записи. Поддельный id (например, из
-    # подправленного вручную HTML) больше не сохраняется и не плодит «призраков».
+    # Внешние ключи — только существующие записи. Поддельный id больше не сохраняется.
     manager_value = (form.get("manager_id") or "").strip()
     if manager_value.isdigit() and db.session.get(User, int(manager_value)):
         lead.manager_id = int(manager_value)
@@ -474,22 +477,18 @@ def _fill_from_form(lead: Lead, form) -> list[str]:
         if company_value:
             warnings.append("указанная компания не найдена — поле очищено")
         lead.company_id = None
-    contact_value = (form.get("contact_id") or "").strip()
-    if contact_value.isdigit() and db.session.get(Contact, int(contact_value)):
-        lead.contact_id = int(contact_value)
-    else:
-        if contact_value:
-            warnings.append("указанный контакт не найден — поле очищено")
+    # Контакты убраны — contact_id больше не используем, но чистим если вдруг пришел
+    # Чтобы не плодить призраков, просто игнорируем.
+    if hasattr(lead, 'contact_id'):
         lead.contact_id = None
     return warnings
 
 
 def _form_context():
-    """Списки для выпадающих меню формы лида."""
+    """Списки для выпадающих меню формы лида. Контакты убраны."""
     return {
         "managers": User.query.filter_by(is_active=True).order_by(User.full_name).all(),
         "companies": Company.query.order_by(Company.name).all(),
-        "contacts": Contact.query.order_by(Contact.last_name, Contact.first_name).all(),
         "stages": STAGE_ORDER,
     }
 
@@ -538,6 +537,7 @@ def edit(lead_id: int):
 @leads_bp.route("/<int:lead_id>/delete", methods=["POST"])
 @login_required
 def delete(lead_id: int):
+    """Удалить карточку лида — доступно всем пользователям (любой может удалять)."""
     lead = Lead.query.get_or_404(lead_id)
     # Отвязываем заявки (сами заявки не удаляем!)
     for req in lead.requests.all():
@@ -546,3 +546,20 @@ def delete(lead_id: int):
     db.session.commit()
     flash(f"Лид «{lead.title}» удалён.", "info")
     return redirect(url_for("leads.kanban"))
+
+
+@leads_bp.route("/clear-all", methods=["POST"])
+@login_required
+def clear_all():
+    """Удалить ВСЕ лиды (компании) в CRM — доступно всем пользователям. Первый шаг глобального обновления."""
+    from ..models.lead import LeadMessage
+    from ..models.request import Request as ReqModel, RequestMessage
+    # Считаем
+    leads_count = Lead.query.count()
+    # Отвязываем заявки от лидов
+    db.session.query(ReqModel).update({ReqModel.lead_id: None})
+    db.session.query(LeadMessage).delete()
+    db.session.query(Lead).delete()
+    db.session.commit()
+    flash(f"Удалены ВСЕ лиды (компании): {leads_count} шт. Контакты убраны из логики.", "info")
+    return redirect(request.form.get("next") or url_for("leads.kanban"))

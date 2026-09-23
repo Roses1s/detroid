@@ -18,7 +18,7 @@
       {% else %}
         <a class="btn btn--secondary" href="{{ url_for('requests.detail', request_id=req.id) }}">Отмена</a>
         <button type="submit" class="btn btn--danger" form="delete-form"
-                onclick="return confirm('Удалить заявку «{{ req.number or req.title }}» безвозвратно?')">Удалить</button>
+                onclick="return confirm('Удалить заявку «{{ req.number or req.title }}» безвозвратно? Удалять могут все.')">Удалить</button>
       {% endif %}
     </div>
   </div>
@@ -107,7 +107,7 @@
       </div>
 
       <div class="o_sheet_section">
-        <div class="o_sheet_section__title">Связи</div>
+        <div class="o_sheet_section__title">Связи (контакты убраны)</div>
         <div class="o_group">
           <div class="o_group_col">
             <label class="o_label" for="manager_id">Менеджер (продавец)</label>
@@ -117,13 +117,15 @@
                 <option value="{{ m.id }}" {% if req.manager_id == m.id %}selected{% endif %}>{{ m.display_name }}</option>
               {% endfor %}
             </select>
-            <label class="o_label" for="lead_id">Лид</label>
+            <label class="o_label" for="lead_id">Лид (компания)</label>
             <select class="input" id="lead_id" name="lead_id">
               <option value="">—</option>
               {% for l in leads %}
                 <option value="{{ l.id }}" {% if req.lead_id == l.id %}selected{% endif %}>{{ l.title }}</option>
               {% endfor %}
             </select>
+          </div>
+          <div class="o_group_col">
             <label class="o_label" for="company_id">Компания</label>
             <select class="input" id="company_id" name="company_id">
               <option value="">—</option>
@@ -131,15 +133,8 @@
                 <option value="{{ c.id }}" {% if req.company_id == c.id %}selected{% endif %}>{{ c.name }}</option>
               {% endfor %}
             </select>
-          </div>
-          <div class="o_group_col">
-            <label class="o_label" for="contact_id">Контакт</label>
-            <select class="input" id="contact_id" name="contact_id">
-              <option value="">—</option>
-              {% for c in contacts %}
-                <option value="{{ c.id }}" {% if req.contact_id == c.id %}selected{% endif %}>{{ c.full_name }}{% if c.company %} ({{ c.company.name }}){% endif %}</option>
-              {% endfor %}
-            </select>
+            <span class="o_label">Контакты</span>
+            <span class="o_field muted">Справочник контактов удалён. Клиент берётся из лида (компании) — поля контактного лица в лиде.</span>
           </div>
         </div>
       </div>

@@ -9,6 +9,9 @@
       <button type="button" class="btn btn--danger" id="bulk-delete-btn" hidden>
         Удалить выбранные (<span id="bulk-delete-count">0</span>)
       </button>
+      <button type="button" class="btn btn--danger" id="clear-all-btn" title="Удалить ВСЕ заявки (доступно всем пользователям)">
+        Удалить все
+      </button>
     </div>
     <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Заявки</span></h1>
   </div>
@@ -18,7 +21,6 @@
     {% include "components/search_requests.html" %}
   </div>
   <div class="o_cp_right">
-    {# Пейджер как в Odoo: 1-80/104 — tabular nums #}
     <span class="o_pager">
       {% if page > 1 %}
         <a class="o_pager__btn" href="{{ url_for('requests.index', q=search_q, status=active_status, page=page-1) }}" title="Назад">‹</a>
@@ -61,7 +63,7 @@
             <th>Дата создания</th>
             <th>Компания</th>
             <th>Продавец</th>
-            <th>Клиент</th>
+            <th>Клиент (Лид)</th>
             <th>Статус</th>
             <th class="o_list_number_th">Маржа</th>
             <th>Действия</th>
@@ -74,9 +76,10 @@
             <td class="o_list_record_selector o_list_check o_data_cell"><input type="checkbox" class="row-check" value="{{ req.id }}"></td>
             <td class="o_data_cell"><a href="{{ url_for('requests.detail', request_id=req.id) }}"><strong>{{ req.number or ("#%d" % req.id) }}</strong></a></td>
             <td class="o_data_cell o_list_date">{{ req.created_at.strftime("%d.%m.%Y") if req.created_at else "" }}</td>
-            <td class="o_data_cell o_list_company" title="{{ req.company.name if req.company else '' }}">
+            <td class="o_data_cell o_list_company" title="{{ req.company.name if req.company else (req.lead.company.name if req.lead and req.lead.company else '') }}">
               {%- if req.company %}{{ req.company.name }}
               {%- elif req.lead and req.lead.company %}{{ req.lead.company.name }}
+              {%- elif req.lead %}{{ req.lead.title }}
               {%- else %}<span class="muted">—</span>{% endif -%}
             </td>
             <td class="o_data_cell">
@@ -87,9 +90,8 @@
                 </span>
               {% else %}<span class="muted">—</span>{% endif %}
             </td>
-            <td class="o_data_cell o_list_client" title="{% if req.contact %}{{ req.contact.full_name }}{% elif req.lead %}{{ req.lead.title }}{% endif %}">
-              {%- if req.contact %}{{ req.contact.full_name }}
-              {%- elif req.lead %}{{ req.lead.title }}
+            <td class="o_data_cell o_list_client" title="{{ req.lead.title if req.lead else '' }}">
+              {%- if req.lead %}{{ req.lead.title }}
               {%- else %}<span class="muted">—</span>{% endif -%}
             </td>
             <td class="o_data_cell"><span class="stage-badge {{ req.status.css_class }}">{{ req.status.title }}</span></td>
@@ -136,12 +138,16 @@
     <div class="o_list_view__footer">
       Всего заявок: {{ total }} · страница {{ page }} из {{ pages }}
       · Итого: {{ grand_total | money }} · Маржа: {{ grand_margin | money }}
+      · Контакты убраны — клиент берётся из лида (компании)
     </div>
   </div>
 </div>
 
-{# Скрытая форма массового удаления: JS добавляет по одному полю ids на каждую галочку #}
 <form id="bulk-delete-form" method="post" action="{{ url_for('requests.bulk_delete') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="next" value="{{ request.full_path }}">
+</form>
+<form id="clear-all-form" method="post" action="{{ url_for('requests.clear_all') }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="next" value="{{ request.full_path }}">
 </form>
@@ -157,6 +163,8 @@
   var btn = document.getElementById("bulk-delete-btn");
   var count = document.getElementById("bulk-delete-count");
   var form = document.getElementById("bulk-delete-form");
+  var clearBtn = document.getElementById("clear-all-btn");
+  var clearForm = document.getElementById("clear-all-form");
   if (!btn) return;
 
   function refresh() {
@@ -177,7 +185,7 @@
   btn.addEventListener("click", function () {
     var ids = checks.filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
     if (!ids.length) return;
-    if (!confirm("Удалить выбранные заявки (" + ids.length + " шт.) безвозвратно?")) return;
+    if (!confirm("Удалить выбранные заявки (" + ids.length + " шт.) безвозвратно? Удалять могут все пользователи.")) return;
     form.querySelectorAll('input[name="ids"]').forEach(function (el) { el.remove(); });
     ids.forEach(function (id) {
       var input = document.createElement("input");
@@ -188,6 +196,13 @@
     });
     form.submit();
   });
+  if (clearBtn && clearForm) {
+    clearBtn.addEventListener("click", function () {
+      if (!confirm("УДАЛИТЬ ВСЕ ЗАЯВКИ В CRM? Это безвозвратно! Подтверди.")) return;
+      if (!confirm("Точно удалить ВСЕ? Последний шанс отменить.")) return;
+      clearForm.submit();
+    });
+  }
 })();
 </script>
 {% endblock %}

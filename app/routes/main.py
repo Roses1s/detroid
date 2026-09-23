@@ -1,8 +1,9 @@
 """Главная страница (dashboard) и служебные страницы."""
 from datetime import datetime, timedelta
 
-from flask import Blueprint, render_template
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required
+
 from sqlalchemy import func
 
 from ..extensions import db
@@ -15,6 +16,43 @@ main_bp = Blueprint("main", __name__)
 def health():
     """Для мониторинга и docker-проверок: жив ли сервис."""
     return {"status": "ok"}
+
+
+@main_bp.route("/clear-all-crm", methods=["POST"])
+@login_required
+def clear_all_crm():
+    """Глобальная очистка CRM — удалить ВСЕ карточки (лиды, компании, заявки, логи).
+    
+    Доступно всем пользователям — требование первого шага глобального обновления.
+    Контакты уже убраны из логики.
+    """
+    from ..models import Company, SavedFilter
+    from ..models.lead import LeadMessage
+    from ..models.request import Request as ReqModel, RequestMessage
+
+    # Считаем для сообщения
+    leads_count = Lead.query.count()
+    req_count = ReqModel.query.count()
+    comp_count = Company.query.count()
+
+    # Чистим логи
+    db.session.query(RequestMessage).delete()
+    db.session.query(LeadMessage).delete()
+    # Чистим заявки
+    db.session.query(ReqModel).delete()
+    # Отвязываем и чистим лиды
+    db.session.query(Lead).delete()
+    # Контакты — если таблица еще есть
+    try:
+        from ..models import Contact
+        db.session.query(Contact).delete()
+    except Exception:
+        pass
+    db.session.query(Company).delete()
+    db.session.query(SavedFilter).delete()
+    db.session.commit()
+    flash(f"CRM полностью очищена: лидов {leads_count}, заявок {req_count}, компаний {comp_count} удалено. Контакты убраны.", "info")
+    return redirect(request.form.get("next") or url_for("main.dashboard"))
 
 
 @main_bp.route("/")

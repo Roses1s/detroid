@@ -6,11 +6,7 @@
   <nav class="o_navbar__menu">
     <a href="{{ url_for('leads.kanban') }}"
        class="o_navbar__link {% if request.endpoint and request.endpoint.startswith('leads.') %}o_navbar__link--active{% endif %}">
-      Лиды
-    </a>
-    <a href="{{ url_for('contacts.contacts_list') }}"
-       class="o_navbar__link {% if request.endpoint and request.endpoint.startswith('contacts.') and 'compan' not in request.endpoint %}o_navbar__link--active{% endif %}">
-      Контакты
+      Лиды (Компании)
     </a>
     <a href="{{ url_for('contacts.companies_list') }}"
        class="o_navbar__link {% if request.endpoint and 'compan' in request.endpoint %}o_navbar__link--active{% endif %}">

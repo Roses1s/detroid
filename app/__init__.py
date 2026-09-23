@@ -59,6 +59,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(leads_bp)
+    # Контакты убраны, но компании остались — blueprint теперь только для компаний
     app.register_blueprint(contacts_bp)
     app.register_blueprint(requests_bp)
     app.register_blueprint(legacy_bp)

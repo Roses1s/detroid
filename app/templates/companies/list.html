@@ -6,8 +6,12 @@
   <div class="o_cp_left o_cp_left--row">
     <div class="o_cp_buttons">
       <a class="btn btn--primary" href="{{ url_for('contacts.company_create') }}">Создать</a>
+      <form method="post" action="{{ url_for('contacts.companies_clear_all') }}" style="display:inline" onsubmit="return confirm('УДАЛИТЬ ВСЕ КОМПАНИИ? Безвозвратно!')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn--danger">Удалить все</button>
+      </form>
     </div>
-    <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Компании</span></h1>
+    <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Компании — контакты убраны</span></h1>
   </div>
   <div class="o_cp_center">
     <form method="get" action="{{ url_for('contacts.companies_list') }}" class="o_searchview">
@@ -25,7 +29,7 @@
   <div class="o_list_view">
     <table>
       <thead>
-        <tr><th>Название</th><th>Телефон</th><th>Email</th><th>Контакты</th><th>Лиды</th></tr>
+        <tr><th>Название</th><th>Телефон</th><th>Email</th><th>Лиды (компании)</th><th>Действия</th></tr>
       </thead>
       <tbody>
         {% for co in companies %}
@@ -33,15 +37,20 @@
           <td><a href="{{ url_for('contacts.company_detail', company_id=co.id) }}">{{ co.name }}</a></td>
           <td>{{ co.phone or "" }}</td>
           <td>{{ co.email or "" }}</td>
-          <td>{{ co.contacts.count() }}</td>
           <td>{{ co.leads.count() }}</td>
+          <td>
+            <form method="post" action="{{ url_for('contacts.company_delete', company_id=co.id) }}" style="display:inline" onsubmit="return confirm('Удалить компанию {{ co.name }}? Может любой пользователь.')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn--danger btn--small">Удалить</button>
+            </form>
+          </td>
         </tr>
         {% else %}
-        <tr><td colspan="5" class="muted">Компаний пока нет.</td></tr>
+        <tr><td colspan="5" class="muted">Компаний пока нет. Контакты убраны из CRM.</td></tr>
         {% endfor %}
       </tbody>
     </table>
-    <div class="o_list_view__footer">Показано {{ companies | length }} из {{ total }} записей</div>
+    <div class="o_list_view__footer">Показано {{ companies | length }} из {{ total }} записей — контакты убраны, удалять могут все</div>
     {% if pages > 1 %}
     <div style="padding:10px 0;text-align:center">
       <span class="o_pager">

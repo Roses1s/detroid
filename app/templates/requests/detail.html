@@ -14,6 +14,10 @@
     <div class="o_cp_buttons">
       <a class="btn btn--primary" href="{{ url_for('requests.edit', request_id=req.id) }}">Изменить</a>
       <a class="btn btn--secondary" href="{{ url_for('requests.create') }}">Создать</a>
+      <form method="post" action="{{ url_for('requests.delete', request_id=req.id) }}" style="display:inline" onsubmit="return confirm('Удалить заявку {{ req.number or '' }}? Может любой пользователь.')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn--danger">Удалить</button>
+      </form>
       {% if advance_to %}
         <form method="post" action="{{ url_for('requests.advance', request_id=req.id) }}" style="display:contents">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -38,7 +42,6 @@
       {% for s in flow %}
         <form method="post" action="{{ url_for('requests.move_status', request_id=req.id) }}" style="display:contents">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="status" value="{{ s.value }}">
           <button type="submit" class="o_statusbar__arrow
             {% if loop.index0 < ns.idx %}is-done{% endif %}
@@ -49,6 +52,7 @@
       {% if req.status.value == "cancelled" %}
         <span class="o_statusbar__arrow is-current-lost">Отменена</span>
         <form method="post" action="{{ url_for('requests.move_status', request_id=req.id) }}" style="display:contents">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="status" value="draft">
           <button type="submit" class="btn btn--secondary btn--small" title="Вернуть заявку в работу">↩ Вернуть в работу</button>
         </form>
@@ -71,14 +75,12 @@
           <div class="o_group_col">
             <span class="o_label">Менеджер</span>
             <span class="o_field">{{ req.manager.display_name if req.manager else "—" }}</span>
-            <span class="o_label">Клиент</span>
+            <span class="o_label">Клиент (Лид-Компания)</span>
             <span class="o_field">
-              {% if req.company %}
-                <a href="{{ url_for('contacts.company_detail', company_id=req.company.id) }}">{{ req.company.name }}</a>
-              {% elif req.contact %}
-                <a href="{{ url_for('contacts.contact_detail', contact_id=req.contact.id) }}">{{ req.contact.full_name }}</a>
-              {% elif req.lead %}
+              {% if req.lead %}
                 <a href="{{ url_for('leads.detail', lead_id=req.lead.id) }}">{{ req.lead.title }}</a>
+              {% elif req.company %}
+                <a href="{{ url_for('contacts.company_detail', company_id=req.company.id) }}">{{ req.company.name }}</a>
               {% else %}—{% endif %}
             </span>
             <span class="o_label">Маршрут</span>
@@ -118,13 +120,13 @@
         </div>
 
         <div class="o_sheet_section">
-          <div class="o_sheet_section__title">Связи</div>
+          <div class="o_sheet_section__title">Связи (контакты убраны)</div>
           <div class="o_group">
             <div class="o_group_col">
-              <span class="o_label">Лид</span>
+              <span class="o_label">Лид (Компания)</span>
               <span class="o_field">
                 {% if req.lead %}
-                  <a href="{{ url_for('leads.detail', lead_id=req.lead.id) }}">{{ req.lead.title }}</a>
+                  <a href="{{ url_for('leads.detail', lead_id=req.lead.id) }}">{{ req.lead.title }}</a> — {{ req.lead.contact_name or "" }} {{ req.lead.phone or "" }}
                 {% else %}—{% endif %}
               </span>
               <span class="o_label">Компания</span>
@@ -133,12 +135,10 @@
                   <a href="{{ url_for('contacts.company_detail', company_id=req.company.id) }}">{{ req.company.name }}</a>
                 {% else %}—{% endif %}
               </span>
-              <span class="o_label">Контакт</span>
-              <span class="o_field">
-                {% if req.contact %}
-                  <a href="{{ url_for('contacts.contact_detail', contact_id=req.contact.id) }}">{{ req.contact.full_name }}</a>
-                {% else %}—{% endif %}
-              </span>
+            </div>
+            <div class="o_group_col">
+              <span class="o_label">Контакты</span>
+              <span class="o_field muted">Убраны. Информация о клиенте теперь в лиде.</span>
             </div>
           </div>
         </div>

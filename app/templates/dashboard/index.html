@@ -5,11 +5,16 @@
 <div class="o_control_panel">
   <div class="o_cp_left">
     <div class="o_cp_left_top">
-      <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Главная</span></h1>
+      <h1 class="o_breadcrumb"><span class="o_breadcrumb__current">Главная — глобальное обновление CRM</span></h1>
     </div>
     <div class="o_cp_buttons">
-      <a class="btn btn--primary" href="{{ url_for('leads.create') }}">Создать лид</a>
-      <a class="btn btn--secondary" href="{{ url_for('leads.kanban') }}">К канбану</a>
+      <a class="btn btn--primary" href="{{ url_for('leads.create') }}">Создать лид (компанию)</a>
+      <a class="btn btn--secondary" href="{{ url_for('leads.kanban') }}">К канбану лидов</a>
+      <form method="post" action="{{ url_for('main.clear_all_crm') }}" style="display:inline" onsubmit="return confirm('УДАЛИТЬ ВСЕ КАРТОЧКИ В CRM? Лиды, компании, заявки, логи — всё безвозвратно! Доступно всем пользователям.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ request.full_path }}">
+        <button type="submit" class="btn btn--danger">Удалить все карточки</button>
+      </form>
     </div>
   </div>
 </div>
@@ -19,7 +24,7 @@
 <div class="o_dashboard">
   <div class="o_stat_grid">
     <div class="o_stat">
-      <div class="o_stat__label">Всего лидов</div>
+      <div class="o_stat__label">Всего лидов (компаний)</div>
       <div class="o_stat__value">{{ total_leads }}</div>
     </div>
     <div class="o_stat">
@@ -38,14 +43,15 @@
 
   <div class="o_panel">
     <div class="o_panel__head">
-      <h2>Последние лиды</h2>
+      <h2>Последние лиды (компании) — контакты убраны из CRM</h2>
       <a class="link" href="{{ url_for('leads.kanban') }}">Открыть канбан →</a>
     </div>
+    <p class="muted" style="margin-bottom:12px">Логика CRM пересмотрена: доска канбан лидов (компаний), в каждый лид можно провалиться чтобы увидеть информацию о клиенте и лог (комментарии). Прямо в лиде — кнопка «Создать заявку на перевозку». Контакты полностью убраны — клиент это поля внутри лида. Удалять карточки могут все пользователи.</p>
     {% if recent_leads %}
     <div class="o_list_view">
       <table>
         <thead>
-          <tr><th>Название</th><th>Контакт</th><th>Стадия</th><th>Выручка</th><th>Менеджер</th></tr>
+          <tr><th>Название (Компания)</th><th>Клиент</th><th>Стадия</th><th>Выручка</th><th>Менеджер</th><th>Действия</th></tr>
         </thead>
         <tbody>
           {% for lead in recent_leads %}
@@ -55,13 +61,20 @@
             <td><span class="stage-badge {{ lead.stage.css_class }}">{{ lead.stage.title }}</span></td>
             <td>{{ lead.expected_revenue | money }}</td>
             <td>{{ lead.manager.display_name if lead.manager else "" }}</td>
+            <td>
+              <a class="btn btn--secondary btn--small" href="{{ url_for('requests.create', lead_id=lead.id) }}">+ Заявка</a>
+              <form method="post" action="{{ url_for('leads.delete', lead_id=lead.id) }}" style="display:inline" onsubmit="return confirm('Удалить лид {{ lead.title }}? Может любой.')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn--danger btn--small">Удалить</button>
+              </form>
+            </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
     {% else %}
-      <p class="muted">Лидов пока нет. <a href="{{ url_for('leads.create') }}">Создайте первый</a>.</p>
+      <p class="muted">Лидов пока нет. <a href="{{ url_for('leads.create') }}">Создайте первый лид-компанию</a>. Все старые карточки можно удалить кнопкой выше — доступно всем.</p>
     {% endif %}
   </div>
 </div>
