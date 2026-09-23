@@ -3,6 +3,7 @@
 import hashlib
 import logging
 import os
+import re
 from datetime import datetime
 
 from flask import Flask, jsonify, redirect, render_template, request, url_for
@@ -16,7 +17,10 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # Логи
+    # Убираем лишние пробелы в Jinja — сразу меньше строк в view-source
+    app.jinja_env.trim_blocks = True
+    app.jinja_env.lstrip_blocks = True
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -24,7 +28,6 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     if app.config["SECRET_KEY"] == "dev-secret-key-change-me":
         app.logger.warning("SECRET_KEY is default! Set SECRET_KEY in .env for production.")
 
-    # За прокси (nginx)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     db.init_app(app)
@@ -32,7 +35,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     login_manager.init_app(app)
     csrf.init_app(app)
 
-    from .models import User  # noqa: F401 — нужен для миграций
+    from .models import User  # noqa: F401
 
     @login_manager.user_loader
     def load_user(user_id: str):
@@ -44,7 +47,6 @@ def create_app(config_class: type[Config] = Config) -> Flask:
             return jsonify({"error": "auth required"}), 401
         return redirect(url_for("auth.login", next=request.path))
 
-    # Blueprints — только активные модули
     from .routes.api import api_bp
     from .routes.auth import auth_bp
     from .routes.leads import leads_bp
@@ -64,6 +66,40 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     @app.errorhandler(500)
     def server_error(e):
         return render_template("errors/500.html"), 500
+
+    # ── Минификация HTML для view-source: меньше строк, скрыть структуру ──
+    @app.after_request
+    def minify_html(response):
+        # Только HTML и только если не файл, не API
+        ctype = response.content_type or ""
+        if "text/html" not in ctype:
+            return response
+        # Не минифицируем страницы с textarea/pre — чтобы не сломать переносы внутри полей
+        try:
+            html = response.get_data(as_text=True)
+        except Exception:
+            return response
+
+        # Пропускаем если есть textarea/pre — там важны пробелы/переносы
+        if "<textarea" in html or "<pre" in html:
+            # Только убираем пустые строки и комментарии, но оставляем переносы
+            html = re.sub(r'<!--(?!\[if).*?-->', '', html, flags=re.DOTALL)
+            # Убираем пустые строки
+            html = "\n".join(line.rstrip() for line in html.splitlines() if line.strip() != "")
+            response.set_data(html)
+            return response
+
+        # Для kanban/list — делаем 1 строку (как просил: меньше строк в view-source)
+        # 714 строк → 1 строка, 28307 → ~24000 chars
+        html = re.sub(r'<!--(?!\[if).*?-->', '', html, flags=re.DOTALL)
+        html = re.sub(r'>\s+<', '><', html)
+        # Склеиваем всё в одну строку, убирая лишние пробелы
+        html = "".join(line.strip() for line in html.splitlines() if line.strip())
+        # Убираем множественные пробелы между словами (но не внутри тегов)
+        # Оставляем один пробел
+        html = re.sub(r'\s{2,}', ' ', html)
+        response.set_data(html)
+        return response
 
     @app.context_processor
     def inject_globals():
